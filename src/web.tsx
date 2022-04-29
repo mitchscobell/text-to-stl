@@ -5,6 +5,7 @@ import * as THREE from "three";
 import OrbitControls from "three-orbit-controls";
 import * as googleFonts from "google-fonts-complete";
 import { fetch } from "cross-fetch";
+import isValidFilename from "valid-filename";
 
 const fontCache: { [name: string]: opentype.Font } = {};
 
@@ -14,7 +15,7 @@ async function getGoogleFont(args: {
   fontWeight?: string;
 }): Promise<opentype.Font> {
   if (!(args.fontName in googleFonts)) {
-    console.log(Object.keys(googleFonts));
+    console.error(Object.keys(googleFonts));
     throw new Error("font not found");
   }
   const variants = googleFonts[args.fontName].variants;
@@ -286,11 +287,21 @@ class Main extends React.Component<MainProps, MainState> {
     let url = window.URL.createObjectURL(blob);
     let a = document.createElement("a");
     a.href = url;
-    a.download = "output.stl";
+    a.download = this.getFilename(this.state.text);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
+  }
+
+  private getFilename(fileNameText: string): string {
+    const defaultOutput = "STL Output.stl";
+    let newFilename = fileNameText.replace(/(\W+)/gi, "-");
+    newFilename = isValidFilename(newFilename)
+      ? newFilename + ".stl"
+      : defaultOutput;
+
+    return newFilename;
   }
 
   public componentDidUpdate(_prevProps: MainProps, prevState: MainState) {
@@ -474,7 +485,7 @@ class Main extends React.Component<MainProps, MainState> {
             style={{ alignSelf: "center", margin: 10 }}
             onClick={() => this.download()}
           >
-            download .stl
+            Download .stl
           </button>
         </div>
       </div>

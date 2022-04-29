@@ -10,11 +10,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@bitbucket.org/mm22/textstl.git"
+    "url": "git@github.com:mitchscobell/text-to-stl.git"
   },
-  "author": "Moritz Moeller",
+  "author": "Mitch Scobell forked from Moritz Moeller",
   "license": "ISC",
-  "homepage": "https://bitbucket.org/mm22/textstl#readme",
+  "homepage": "https://github.com/mitchscobell/text-to-stl#text-to-stl",
   "devDependencies": {
     "@types/opentype.js": "^0.7.2",
     "@types/optimist": "0.0.29",
@@ -37,6 +37,7 @@
     "react-dom": "^16.9.0",
     "three": "^0.107.0",
     "three-orbit-controls": "^82.1.0",
-    "threejs-export-stl": "0.0.4"
+    "threejs-export-stl": "0.0.4",
+    "valid-filename": "^4.0.0"
   }
 }

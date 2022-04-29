@@ -15,3 +15,7 @@ OR Running locally
 npm run tsc
 node lib/cli.js
 ```
+
+## Forked from
+
+[mo22/textstl](https://github.com/mo22/textstl)

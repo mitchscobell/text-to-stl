@@ -1,22 +1,29 @@
-import * as React from 'react';
-import ReactDOM from 'react-dom';
-import * as TextMaker from './TextMaker';
-import * as THREE from 'three';
-import OrbitControls from 'three-orbit-controls';
-import * as googleFonts from 'google-fonts-complete';
-import { fetch } from 'cross-fetch';
+import * as React from "react";
+import ReactDOM from "react-dom";
+import * as TextMaker from "./TextMaker";
+import * as THREE from "three";
+import OrbitControls from "three-orbit-controls";
+import * as googleFonts from "google-fonts-complete";
+import { fetch } from "cross-fetch";
 
 const fontCache: { [name: string]: opentype.Font } = {};
 
-async function getGoogleFont(args: { fontName: string, fontVariant?: string, fontWeight?: string; }): Promise<opentype.Font> {
+async function getGoogleFont(args: {
+  fontName: string;
+  fontVariant?: string;
+  fontWeight?: string;
+}): Promise<opentype.Font> {
   if (!(args.fontName in googleFonts)) {
     console.log(Object.keys(googleFonts));
-    throw new Error('font not found');
+    throw new Error("font not found");
   }
   const variants = googleFonts[args.fontName].variants;
-  const variant = variants[args.fontVariant || 'normal'] || variants[Object.keys(variants)[0]];
-  const face = variant[args.fontWeight || '400'] || variant[Object.keys(variant)[0]];
-  const url = face.url.ttf!.replace('http:', 'https:');
+  const variant =
+    variants[args.fontVariant || "normal"] ||
+    variants[Object.keys(variants)[0]];
+  const face =
+    variant[args.fontWeight || "400"] || variant[Object.keys(variant)[0]];
+  const url = face.url.ttf!.replace("http:", "https:");
   if (!fontCache[url]) {
     const res = await fetch(url);
     const fontData = await res.arrayBuffer();
@@ -35,7 +42,7 @@ async function generateGeometry(args: {
   text: string;
   fontSize?: number;
   width?: number;
-  kerning?: number|number[];
+  kerning?: number | number[];
   fontName?: string;
   fontVariant?: string;
   fontWeight?: string;
@@ -43,15 +50,15 @@ async function generateGeometry(args: {
 }): Promise<THREE.Geometry> {
   const fontSize = args.fontSize || 72;
   const width = args.width || 20;
-  const text = args.text || 'Hello';
+  const text = args.text || "Hello";
   const kerning = args.kerning || 0;
-  const font = args.fontBin ?
-    await getBinFont(args.fontBin) :
-    await getGoogleFont({
-      fontName: args.fontName!,
-      fontVariant: args.fontVariant,
-      fontWeight: args.fontWeight,
-    });
+  const font = args.fontBin
+    ? await getBinFont(args.fontBin)
+    : await getGoogleFont({
+        fontName: args.fontName!,
+        fontVariant: args.fontVariant,
+        fontWeight: args.fontWeight,
+      });
   const geometry = TextMaker.stringToGeometry({
     font: font,
     text: text,
@@ -61,8 +68,6 @@ async function generateGeometry(args: {
   });
   return geometry;
 }
-
-
 
 interface ThreePreviewProps {
   geometry?: THREE.Geometry;
@@ -79,7 +84,7 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
   private mesh?: THREE.Mesh;
   private surface: HTMLDivElement | null;
   private container: HTMLDivElement | null;
-  private size?: { width: number; height: number; };
+  private size?: { width: number; height: number };
   private controls: any;
 
   public componentWillUnmount() {
@@ -97,17 +102,12 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
     lights[2] = new THREE.PointLight(0xffffff, 1, 0);
     lights[0].position.set(0, 200, 0);
     lights[1].position.set(100, 200, 100);
-    lights[2].position.set(- 100, - 200, - 100);
+    lights[2].position.set(-100, -200, -100);
     this.scene.add(lights[0]);
     this.scene.add(lights[1]);
     this.scene.add(lights[2]);
 
-    this.camera = new THREE.PerspectiveCamera(
-      75,
-      1024 / 768,
-      0.1,
-      10000
-    );
+    this.camera = new THREE.PerspectiveCamera(75, 1024 / 768, 0.1, 10000);
     this.camera.position.z = 200;
     this.scene.add(this.camera);
 
@@ -121,7 +121,10 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
       this.surface.appendChild(this.renderer.domElement);
     }
 
-    this.controls = new (OrbitControls(THREE))(this.camera, this.renderer.domElement);
+    this.controls = new (OrbitControls(THREE))(
+      this.camera,
+      this.renderer.domElement
+    );
     this.controls.maxPolarAngle = Math.PI * 1;
     this.controls.minDistance = 50;
     this.controls.maxDistance = 1000;
@@ -141,7 +144,7 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
     }
   }
 
-  public setGeometry(geometry: THREE.Geometry|undefined) {
+  public setGeometry(geometry: THREE.Geometry | undefined) {
     if (this.mesh) {
       this.scene.remove(this.mesh);
       this.mesh = undefined;
@@ -164,7 +167,11 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
     if (!this.active) return;
     requestAnimationFrame(() => this.renderFrame());
     if (this.container) {
-      if (this.size === undefined || this.size.width !== this.container.offsetWidth || this.size.height !== this.container.offsetHeight) {
+      if (
+        this.size === undefined ||
+        this.size.width !== this.container.offsetWidth ||
+        this.size.height !== this.container.offsetHeight
+      ) {
         this.size = {
           width: this.container.offsetWidth,
           height: this.container.offsetHeight,
@@ -183,14 +190,14 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
     this.renderer.render(this.scene, this.camera);
   }
 
-  private setSurface(surface: HTMLDivElement|null) {
+  private setSurface(surface: HTMLDivElement | null) {
     this.surface = surface;
     if (this.surface && this.renderer) {
       this.surface.appendChild(this.renderer.domElement);
     }
   }
 
-  private setContainer(container: HTMLDivElement|null) {
+  private setContainer(container: HTMLDivElement | null) {
     this.container = container;
   }
 
@@ -198,8 +205,8 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
     return (
       <div
         style={{
-          position: 'relative',
-          overflow: 'hidden',
+          position: "relative",
+          overflow: "hidden",
           margin: 0,
           padding: 0,
           ...this.props.style,
@@ -208,7 +215,7 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
       >
         <div
           style={{
-            position: 'absolute',
+            position: "absolute",
             left: 0,
             top: 0,
             margin: 0,
@@ -219,13 +226,9 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
       </div>
     );
   }
-
 }
 
-
-
-interface MainProps {
-}
+interface MainProps {}
 interface MainState {
   text: string;
   fontBin?: ArrayBuffer;
@@ -235,17 +238,17 @@ interface MainState {
   fontVariant: string;
   fontWeight: string;
   kerning: string;
-  geometry: THREE.Geometry|undefined;
+  geometry: THREE.Geometry | undefined;
 }
 class Main extends React.Component<MainProps, MainState> {
   public state: MainState = {
-    text: 'Hello!',
-    fontName: 'Damion',
-    fontSize: '72',
-    width: '20',
-    fontVariant: 'normal',
-    fontWeight: '400',
-    kerning: '0',
+    text: "Hello!",
+    fontName: "Damion",
+    fontSize: "72",
+    width: "20",
+    fontVariant: "normal",
+    fontWeight: "400",
+    kerning: "0",
     geometry: undefined,
   };
 
@@ -260,21 +263,30 @@ class Main extends React.Component<MainProps, MainState> {
       width: parseFloat(this.state.width),
       fontWeight: this.state.fontWeight,
       fontVariant: this.state.fontVariant,
-      kerning: (this.state.kerning.indexOf(',') >= 0) ? this.state.kerning.split(',').map(parseFloat) : parseFloat(this.state.kerning),
+      kerning:
+        this.state.kerning.indexOf(",") >= 0
+          ? this.state.kerning.split(",").map(parseFloat)
+          : parseFloat(this.state.kerning),
     });
     this.geometry = geometry;
     geometry.computeBoundingBox();
-    geometry.applyMatrix( new THREE.Matrix4().makeTranslation(-geometry.boundingBox.max.x / 2, -geometry.boundingBox.max.y / 2, 0) );
+    geometry.applyMatrix(
+      new THREE.Matrix4().makeTranslation(
+        -geometry.boundingBox.max.x / 2,
+        -geometry.boundingBox.max.y / 2,
+        0
+      )
+    );
     this.setState({ geometry: geometry });
   }
 
   private download() {
     let stl = TextMaker.geometryToSTL(this.geometry);
-    let blob = new Blob([stl], { type: 'application/octet-stream' });
+    let blob = new Blob([stl], { type: "application/octet-stream" });
     let url = window.URL.createObjectURL(blob);
-    let a = document.createElement('a');
+    let a = document.createElement("a");
     a.href = url;
-    a.download = 'output.stl';
+    a.download = "output.stl";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -282,15 +294,16 @@ class Main extends React.Component<MainProps, MainState> {
   }
 
   public componentDidUpdate(_prevProps: MainProps, prevState: MainState) {
-    if (prevState.text !== this.state.text ||
-        prevState.fontBin !== this.state.fontBin ||
-        prevState.fontName !== this.state.fontName ||
-        prevState.fontSize !== this.state.fontSize ||
-        prevState.fontVariant !== this.state.fontVariant ||
-        prevState.fontWeight !== this.state.fontWeight ||
-        prevState.kerning !== this.state.kerning ||
-        prevState.width !== this.state.width
-      ) {
+    if (
+      prevState.text !== this.state.text ||
+      prevState.fontBin !== this.state.fontBin ||
+      prevState.fontName !== this.state.fontName ||
+      prevState.fontSize !== this.state.fontSize ||
+      prevState.fontVariant !== this.state.fontVariant ||
+      prevState.fontWeight !== this.state.fontWeight ||
+      prevState.kerning !== this.state.kerning ||
+      prevState.width !== this.state.width
+    ) {
       this.updateGeometry();
     }
   }
@@ -303,40 +316,68 @@ class Main extends React.Component<MainProps, MainState> {
     return (
       <div>
         <div>
-          <label style={{ display: 'inline-block', width: 80, margin: 10 }}>Text</label>
-          <input style={{ width: 160, margin: 10 }} type="text" value={this.state.text} onChange={(event) => this.setState({ text: event.target.value })} />
+          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
+            Text
+          </label>
+          <input
+            style={{ width: 160, margin: 10 }}
+            type="text"
+            value={this.state.text}
+            onChange={(event) => this.setState({ text: event.target.value })}
+          />
         </div>
 
         <div>
-          <label style={{ display: 'inline-block', width: 80, margin: 10 }}>Font</label>
-          <select style={{ width: 160, margin: 10 }} value={this.state.fontName} onChange={(event) => this.setState({ fontName: event.target.value, fontBin: undefined })}>
-            {Object.keys(googleFonts).map((a) => (a === 'default') ? null : (
-              <option key={a} value={a}>{a}</option>
-            ))}
+          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
+            Font
+          </label>
+          <select
+            style={{ width: 160, margin: 10 }}
+            value={this.state.fontName}
+            onChange={(event) =>
+              this.setState({
+                fontName: event.target.value,
+                fontBin: undefined,
+              })
+            }
+          >
+            {Object.keys(googleFonts).map((a) =>
+              a === "default" ? null : (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              )
+            )}
             {!!this.state.fontBin && (
-              <option value={this.state.fontName}>custom: {this.state.fontName}</option>
+              <option value={this.state.fontName}>
+                custom: {this.state.fontName}
+              </option>
             )}
           </select>
         </div>
 
         <div>
-          <label style={{ display: 'inline-block', width: 80, margin: 10 }}></label>
+          <label
+            style={{ display: "inline-block", width: 80, margin: 10 }}
+          ></label>
           <input
             style={{ width: 160, margin: 10 }}
             type="file"
             accept=".ttf"
             onChange={async (e) => {
               const file = e.target.files![0];
-              const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                  resolve(reader.result as ArrayBuffer);
-                };
-                reader.onerror = (e) => {
-                  reject(e);
-                };
-                reader.readAsArrayBuffer(file);
-              });
+              const buffer = await new Promise<ArrayBuffer>(
+                (resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onload = () => {
+                    resolve(reader.result as ArrayBuffer);
+                  };
+                  reader.onerror = (e) => {
+                    reject(e);
+                  };
+                  reader.readAsArrayBuffer(file);
+                }
+              );
               this.setState({ fontName: file.name, fontBin: buffer });
             }}
           />
@@ -344,42 +385,97 @@ class Main extends React.Component<MainProps, MainState> {
 
         {googleFonts[this.state.fontName] && (
           <div>
-            <label style={{ display: 'inline-block', width: 80, margin: 10 }}>Variant</label>
-            <select style={{ width: 160, margin: 10 }} value={this.state.fontVariant} onChange={(event) => this.setState({ fontVariant: event.target.value })}>
-              {Object.keys(googleFonts[this.state.fontName].variants).map((i) => (
-                <option key={i} value={i}>{i}</option>
-              ))}
+            <label style={{ display: "inline-block", width: 80, margin: 10 }}>
+              Variant
+            </label>
+            <select
+              style={{ width: 160, margin: 10 }}
+              value={this.state.fontVariant}
+              onChange={(event) =>
+                this.setState({ fontVariant: event.target.value })
+              }
+            >
+              {Object.keys(googleFonts[this.state.fontName].variants).map(
+                (i) => (
+                  <option key={i} value={i}>
+                    {i}
+                  </option>
+                )
+              )}
             </select>
           </div>
         )}
-        {googleFonts[this.state.fontName] && googleFonts[this.state.fontName].variants[this.state.fontVariant] && (
-          <div>
-            <label style={{ display: 'inline-block', width: 80, margin: 10 }}>Weight</label>
-            <select style={{ width: 160, margin: 10 }} value={this.state.fontWeight} onChange={(event) => this.setState({ fontWeight: event.target.value })}>
-              {Object.keys(googleFonts[this.state.fontName].variants[this.state.fontVariant]).map((i) => (
-                <option key={i} value={i}>{i}</option>
-              ))}
-            </select>
-          </div>
-        )}
+        {googleFonts[this.state.fontName] &&
+          googleFonts[this.state.fontName].variants[this.state.fontVariant] && (
+            <div>
+              <label style={{ display: "inline-block", width: 80, margin: 10 }}>
+                Weight
+              </label>
+              <select
+                style={{ width: 160, margin: 10 }}
+                value={this.state.fontWeight}
+                onChange={(event) =>
+                  this.setState({ fontWeight: event.target.value })
+                }
+              >
+                {Object.keys(
+                  googleFonts[this.state.fontName].variants[
+                    this.state.fontVariant
+                  ]
+                ).map((i) => (
+                  <option key={i} value={i}>
+                    {i}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
         <div>
-          <label style={{ display: 'inline-block', width: 80, margin: 10 }}>Size</label>
-          <input style={{ width: 160, margin: 10 }} type="text" value={this.state.fontSize} onChange={(event) => this.setState({ fontSize: event.target.value })} />
+          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
+            Size
+          </label>
+          <input
+            style={{ width: 160, margin: 10 }}
+            type="text"
+            value={this.state.fontSize}
+            onChange={(event) =>
+              this.setState({ fontSize: event.target.value })
+            }
+          />
         </div>
 
         <div>
-          <label style={{ display: 'inline-block', width: 80, margin: 10 }}>Kerning</label>
-          <input style={{ width: 160, margin: 10 }} type="text" value={this.state.kerning} onChange={(event) => this.setState({ kerning: event.target.value })} />
+          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
+            Kerning
+          </label>
+          <input
+            style={{ width: 160, margin: 10 }}
+            type="text"
+            value={this.state.kerning}
+            onChange={(event) => this.setState({ kerning: event.target.value })}
+          />
         </div>
 
         <div>
-          <label style={{ display: 'inline-block', width: 80, margin: 10 }}>Width</label>
-          <input style={{ width: 160, margin: 10 }} type="text" value={this.state.width} onChange={(event) => this.setState({ width: event.target.value })} />
+          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
+            Width
+          </label>
+          <input
+            style={{ width: 160, margin: 10 }}
+            type="text"
+            value={this.state.width}
+            onChange={(event) => this.setState({ width: event.target.value })}
+          />
         </div>
 
         <div>
-          <button style={{ alignSelf: 'center', margin: 10 }} onClick={() => this.download()}>download .stl</button>
+          <button
+            style={{ alignSelf: "center", margin: 10 }}
+            onClick={() => this.download()}
+          >
+            download .stl
+          </button>
         </div>
       </div>
     );
@@ -387,9 +483,14 @@ class Main extends React.Component<MainProps, MainState> {
 
   public render() {
     return (
-      <div style={{ display: 'flex', flex: 1, flexDirection: 'row' }}>
-        <ThreePreview geometry={this.state.geometry} style={{ display: 'flex', flex: 1 }} />
-        <div style={{ display: 'flex', width: 300, backgroundColor: 'powderblue' }}>
+      <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
+        <ThreePreview
+          geometry={this.state.geometry}
+          style={{ display: "flex", flex: 1 }}
+        />
+        <div
+          style={{ display: "flex", width: 300, backgroundColor: "powderblue" }}
+        >
           {this.renderSettings()}
         </div>
       </div>
@@ -397,6 +498,6 @@ class Main extends React.Component<MainProps, MainState> {
   }
 }
 
-const el = document.createElement('div');
-document.querySelector('body')!.appendChild(el);
+const el = document.createElement("div");
+document.querySelector("body")!.appendChild(el);
 ReactDOM.render(<Main />, el);

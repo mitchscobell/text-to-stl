@@ -8,6 +8,7 @@ import { fetch } from "cross-fetch";
 import isValidFilename from "valid-filename";
 
 const fontCache: { [name: string]: opentype.Font } = {};
+const controlWidth: number = 250;
 
 async function getGoogleFont(args: {
   fontName: string;
@@ -331,7 +332,7 @@ class Main extends React.Component<MainProps, MainState> {
             Text
           </label>
           <input
-            style={{ width: 160, margin: 10 }}
+            style={{ width: controlWidth, margin: 10 }}
             type="text"
             value={this.state.text}
             onChange={(event) => this.setState({ text: event.target.value })}
@@ -343,7 +344,7 @@ class Main extends React.Component<MainProps, MainState> {
             Font
           </label>
           <select
-            style={{ width: 160, margin: 10 }}
+            style={{ width: controlWidth, margin: 10 }}
             value={this.state.fontName}
             onChange={(event) =>
               this.setState({
@@ -372,7 +373,7 @@ class Main extends React.Component<MainProps, MainState> {
             style={{ display: "inline-block", width: 80, margin: 10 }}
           ></label>
           <input
-            style={{ width: 160, margin: 10 }}
+            style={{ width: controlWidth, margin: 10 }}
             type="file"
             accept=".ttf"
             onChange={async (e) => {
@@ -400,7 +401,7 @@ class Main extends React.Component<MainProps, MainState> {
               Variant
             </label>
             <select
-              style={{ width: 160, margin: 10 }}
+              style={{ width: controlWidth, margin: 10 }}
               value={this.state.fontVariant}
               onChange={(event) =>
                 this.setState({ fontVariant: event.target.value })
@@ -423,7 +424,7 @@ class Main extends React.Component<MainProps, MainState> {
                 Weight
               </label>
               <select
-                style={{ width: 160, margin: 10 }}
+                style={{ width: controlWidth, margin: 10 }}
                 value={this.state.fontWeight}
                 onChange={(event) =>
                   this.setState({ fontWeight: event.target.value })
@@ -447,7 +448,7 @@ class Main extends React.Component<MainProps, MainState> {
             Size
           </label>
           <input
-            style={{ width: 160, margin: 10 }}
+            style={{ width: controlWidth, margin: 10 }}
             type="text"
             value={this.state.fontSize}
             onChange={(event) =>
@@ -461,7 +462,7 @@ class Main extends React.Component<MainProps, MainState> {
             Kerning
           </label>
           <input
-            style={{ width: 160, margin: 10 }}
+            style={{ width: controlWidth, margin: 10 }}
             type="text"
             value={this.state.kerning}
             onChange={(event) => this.setState({ kerning: event.target.value })}
@@ -473,7 +474,7 @@ class Main extends React.Component<MainProps, MainState> {
             Width
           </label>
           <input
-            style={{ width: 160, margin: 10 }}
+            style={{ width: controlWidth, margin: 10 }}
             type="text"
             value={this.state.width}
             onChange={(event) => this.setState({ width: event.target.value })}
@@ -485,7 +486,7 @@ class Main extends React.Component<MainProps, MainState> {
             style={{ alignSelf: "center", margin: 10 }}
             onClick={() => this.download()}
           >
-            Download .stl
+            Download .STL
           </button>
         </div>
       </div>
@@ -495,20 +496,20 @@ class Main extends React.Component<MainProps, MainState> {
   public render() {
     return (
       <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
+        <div
+          style={{ display: "flex", width: 400, backgroundColor: "powderblue" }}
+        >
+          {this.renderSettings()}
+        </div>
         <ThreePreview
           geometry={this.state.geometry}
           style={{ display: "flex", flex: 1 }}
         />
-        <div
-          style={{ display: "flex", width: 300, backgroundColor: "powderblue" }}
-        >
-          {this.renderSettings()}
-        </div>
       </div>
     );
   }
 }
 
-const el = document.createElement("div");
-document.querySelector("body")!.appendChild(el);
-ReactDOM.render(<Main />, el);
+const element = document.createElement("div");
+document.querySelector("body")!.appendChild(element);
+ReactDOM.render(<Main />, element);

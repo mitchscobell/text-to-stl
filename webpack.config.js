@@ -27,6 +27,8 @@ let config = (module.exports = {
       chunks: ["index"],
       filename: "index.html",
       inject: "body",
+      title: "Text to STL",
+      favicon: "./src/images/favicon.png"
     }),
   ],
 

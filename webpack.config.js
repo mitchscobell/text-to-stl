@@ -5,8 +5,8 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 let config = (module.exports = {
   context: path.resolve(__dirname),
 
-  // mode: "production",
-  mode: "development",
+  mode: "production",
+  //mode: "development",
 
   module: {
     rules: [
@@ -28,7 +28,7 @@ let config = (module.exports = {
       filename: "index.html",
       inject: "body",
       title: "Text to STL",
-      favicon: "./src/images/favicon.png"
+      favicon: "./src/images/favicon.png",
     }),
   ],
 

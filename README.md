@@ -6,7 +6,7 @@
   npm install
   npm run webpack
   cd dist
-  # run index.html
+  # run index.html in your browser
 ```
 
 OR Running locally

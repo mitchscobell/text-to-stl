@@ -6,7 +6,8 @@
   npm install
   npm run webpack
   cd dist
-  # browse to index.html in your web browser
+  # browse to index.html in your web browser or copy to server, for example apache2
+  sudo cp -r $HOME/text-to-stl/dist/* /var/www/html
 ```
 
 OR Running locally

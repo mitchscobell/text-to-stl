@@ -272,7 +272,7 @@ class Main extends React.Component<MainProps, MainState> {
     });
     this.geometry = geometry;
     geometry.computeBoundingBox();
-    geometry.applyMatrix(
+    geometry.applyMatrix4(
       new THREE.Matrix4().makeTranslation(
         -geometry.boundingBox.max.x / 2,
         -geometry.boundingBox.max.y / 2,

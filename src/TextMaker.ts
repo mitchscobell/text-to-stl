@@ -109,14 +109,14 @@ export function stringToGeometry(args: {
         depth: args.width,
         steps: 1,
       });
-      geometry.applyMatrix(
+      geometry.applyMatrix4(
         new THREE.Matrix4().makeScale(
           (1 / args.font.unitsPerEm) * args.size,
           (1 / args.font.unitsPerEm) * args.size,
           1
         )
       );
-      geometry.applyMatrix(new THREE.Matrix4().makeTranslation(x, y, 0));
+      geometry.applyMatrix4(new THREE.Matrix4().makeTranslation(x, y, 0));
       geometries.push(geometry);
     }
   );

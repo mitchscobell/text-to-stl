@@ -11,10 +11,10 @@ let config = (module.exports = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
-        use: "awesome-typescript-loader",
+        test: /\.(ts|tsx)$/,
+        use: 'ts-loader',
+        exclude: /node_modules/,
       },
-
       {
         test: /\.(png|jpg|jpeg)$/,
         use: "url-loader",

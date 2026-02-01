@@ -71,6 +71,35 @@ Health check configuration:
 - Start period: 5s
 - Retries: 3
 
+## 🏥 Version & Health Check Endpoints
+
+### Version HTML Page
+```
+GET http://localhost:3000/version
+```
+Returns an HTML page with version information, build date, and environment details. Useful for quick verification and monitoring dashboards.
+
+### Version JSON API
+```
+GET http://localhost:3000/version.json
+```
+Returns version information in JSON format:
+```json
+{
+  "version": "2.0.1",
+  "buildDate": "2026-02-01T04:53:07.774Z",
+  "environment": "production",
+  "name": "text-to-stl",
+  "description": "create .stl files from font"
+}
+```
+
+**Use cases:**
+- Docker healthchecks
+- Monitoring and alerting
+- Deployment verification
+- Version tracking across environments
+
 ## 🔄 Continuous Integration
 
 GitHub Actions automatically on every push to `master`:

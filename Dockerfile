@@ -33,6 +33,12 @@ RUN rm -rf /usr/share/nginx/html/*
 # Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# Copy version file
+COPY --from=builder /app/public/version.json /usr/share/nginx/html/
+
+# Copy version HTML page
+COPY --from=builder /app/public/version.html /usr/share/nginx/html/
+
 # Expose port
 EXPOSE 3000
 

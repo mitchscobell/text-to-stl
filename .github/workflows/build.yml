@@ -7,11 +7,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          ref: master
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,8 +32,8 @@ jobs:
 
       - name: Increment version and commit
         run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
           
           # Get current version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
@@ -38,7 +41,7 @@ jobs:
           # Increment patch version
           NEW_VERSION=$(node -p "require('semver').inc('$CURRENT_VERSION', 'patch')")
           
-          # Update package.json
+          # Update package.json and package-lock.json
           npm version $NEW_VERSION --no-git-tag-version
           
           # Commit and push
@@ -46,7 +49,7 @@ jobs:
           git commit -m "chore: Increment version to $NEW_VERSION"
           git push origin master
 
-      - name: Build and push Docker image
+      - name: Docker build ready
         run: |
           echo "Docker image ready for deployment"
-          echo "Use: docker build -t text-to-stl:$(node -p "require('./package.json').version") ."
+          echo "Version: $(node -p "require('./package.json').version")"

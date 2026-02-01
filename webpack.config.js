@@ -45,7 +45,7 @@ let config = (module.exports = {
   },
 
   entry: {
-    index: "./src/web.tsx",
+    index: "./src/index.tsx",
   },
   
   performance: {

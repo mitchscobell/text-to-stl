@@ -59,6 +59,63 @@ npm run build
 
 Output will be in the `dist/` directory. Deploy the `dist/` folder to your web server.
 
+### Linting
+
+Check code style:
+
+```bash
+npm run lint
+```
+
+Auto-fix linting issues:
+
+```bash
+npm run lint:fix
+```
+
+## Docker Deployment
+
+### Build Docker Image
+
+```bash
+docker build -t text-to-stl:latest .
+```
+
+### Run with Docker Compose
+
+```bash
+docker-compose up
+```
+
+The app will be available at `http://localhost:3000`
+
+### Run with Docker Directly
+
+```bash
+docker run -p 3000:3000 text-to-stl:latest
+```
+
+The Dockerfile uses a multi-stage build:
+1. **Dependencies stage**: Installs npm packages
+2. **Builder stage**: Builds the production bundle
+3. **Runtime stage**: Serves static files with Nginx on port 3000
+
+### Health Check
+
+Docker automatically checks if the container is healthy by making HTTP requests to `http://localhost:3000/`
+
+## Continuous Integration
+
+GitHub Actions automatically:
+- Runs on every push to `master` branch
+- Installs dependencies
+- Runs linter (`npm run lint`)
+- Builds the project (`npm run build`)
+- Increments the patch version in `package.json`
+- Commits version change back to repository
+
+View workflow: `.github/workflows/build.yml`
+
 ## Tech Stack
 
 - **React 18** - UI framework

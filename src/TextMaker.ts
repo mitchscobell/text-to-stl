@@ -1,6 +1,7 @@
 import * as opentype from "opentype.js";
 import * as THREE from "three";
 import * as exportSTL from "threejs-export-stl";
+import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 export interface ContourPoint {
   x: number;
@@ -88,8 +89,8 @@ export function stringToGeometry(args: {
   size: number;
   width: number;
   kerning?: number | number[];
-}): THREE.Geometry {
-  const geometries: THREE.Geometry[] = [];
+}): THREE.BufferGeometry {
+  const geometries: THREE.BufferGeometry[] = [];
   let dx = 0;
   args.font.forEachGlyph(
     args.text,
@@ -120,9 +121,8 @@ export function stringToGeometry(args: {
       geometries.push(geometry);
     }
   );
-  const geometry = geometries[0];
-  for (const i of geometries.slice(1)) geometry.merge(i);
-  return geometry;
+  const merged = BufferGeometryUtils.mergeBufferGeometries(geometries);
+  return merged || geometries[0];
 }
 
 export function loadFont(arg: ArrayBuffer): opentype.Font {
@@ -130,7 +130,7 @@ export function loadFont(arg: ArrayBuffer): opentype.Font {
   return font;
 }
 
-export function geometryToSTL(geometry: THREE.Geometry) {
+export function geometryToSTL(geometry: THREE.BufferGeometry) {
   const tmp = geometry.type;
   geometry.type = "Geometry"; // bug in exportSTL?
   const data = exportSTL.fromGeometry(geometry);

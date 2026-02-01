@@ -1,6 +1,7 @@
 const webpack = require("webpack");
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CopyPlugin = require("copy-webpack-plugin");
 
 let config = (module.exports = {
   context: path.resolve(__dirname),
@@ -29,6 +30,11 @@ let config = (module.exports = {
       inject: "body",
       title: "Text to STL",
       favicon: "./src/images/favicon.png",
+    }),
+    new CopyPlugin({
+      patterns: [
+        { from: "fonts", to: "fonts" },
+      ],
     }),
   ],
 

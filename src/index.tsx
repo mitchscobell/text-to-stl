@@ -7,11 +7,92 @@ import * as googleFonts from "google-fonts-complete";
 import { fetch } from "cross-fetch";
 import isValidFilename from "valid-filename";
 
-/** Cache for loaded Google Fonts to avoid redundant network requests */
+/** Cache for loaded fonts to avoid redundant network requests */
 const fontCache: { [name: string]: opentype.Font } = {};
 
 /** Width of form input controls in pixels */
 const controlWidth: number = 250;
+
+/** Discovered local fonts */
+let localFonts: Array<{ name: string; path: string }> = [];
+
+/**
+ * Discovers available local fonts by scanning the fonts directory.
+ * Attempts to load a directory listing or discovers fonts via fetch attempts.
+ */
+async function discoverLocalFonts(): Promise<void> {
+  // Common font extensions
+  const fontExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
+  
+  // Try to detect available fonts by attempting to load common patterns
+  // This is done via a simple fetch - if the file exists, it loads
+  try {
+    // First, try to get a fonts index if it exists
+    const response = await fetch("/fonts/index.json").catch(() => null);
+    if (response && response.ok) {
+      const index = await response.json();
+      localFonts = index.fonts || [];
+      return;
+    }
+  } catch (error) {
+    // Continue to discovery
+  }
+
+  // Fallback: Try to discover fonts by common file patterns
+  // This is a simple approach - just try a few font names and see what exists
+  const possibleFonts: Array<{ name: string; path: string }> = [];
+  const knownFontNames = [
+    "Amity Jack",
+    "Milwaukee-Packout-HelveticaFont",
+    "RogueFitness-AeroExtended Regular",
+    "Ryobi-Pulp Fiction Italic M54",
+    "Ryobi-Pulp Fiction M54",
+  ];
+
+  for (const fontName of knownFontNames) {
+    for (const ext of fontExtensions) {
+      const path = `/fonts/${fontName}${ext}`;
+      try {
+        const response = await fetch(path, { method: "HEAD" });
+        if (response.ok) {
+          possibleFonts.push({
+            name: fontName,
+            path: path,
+          });
+          break;
+        }
+      } catch (error) {
+        // Font doesn't exist, continue
+      }
+    }
+  }
+
+  localFonts = possibleFonts;
+  console.log(`✓ Discovered ${localFonts.length} local font(s)`);
+}
+
+/**
+ * Loads a font from the local fonts directory.
+ * 
+ * @param fontPath - Path to the font file (e.g., "/fonts/MyFont.ttf")
+ * @returns The loaded opentype.Font object
+ * @throws If the font cannot be loaded
+ * 
+ * @example
+ * const font = await getLocalFont("/fonts/MyCustomFont.ttf");
+ */
+async function getLocalFont(fontPath: string): Promise<opentype.Font> {
+  if (!fontCache[fontPath]) {
+    const res = await fetch(fontPath);
+    if (!res.ok) {
+      throw new Error(`Failed to load font: ${fontPath}`);
+    }
+    const fontData = await res.arrayBuffer();
+    const font = TextMaker.loadFont(fontData);
+    fontCache[fontPath] = font;
+  }
+  return fontCache[fontPath];
+}
 
 /**
  * Fetches and caches a Google Font by name.
@@ -71,17 +152,18 @@ async function getBinFont(buffer: ArrayBuffer): Promise<opentype.Font> {
 
 /**
  * Generates 3D BufferGeometry from text using the specified font and parameters.
- * Handles both Google Fonts and custom uploaded fonts.
+ * Handles Google Fonts, local fonts, and custom uploaded fonts.
  * 
  * @param args - Geometry generation options
  * @param args.text - The text to render
  * @param args.fontSize - Font size in pixels, defaults to 72
  * @param args.width - Extrusion depth (Z-axis), defaults to 20
  * @param args.kerning - Kerning adjustment, defaults to 0
- * @param args.fontName - Name of Google Font to use
+ * @param args.fontName - Name of Google Font or local font to use
+ * @param args.fontPath - Path to local font file (takes precedence)
  * @param args.fontVariant - Font variant (normal/italic)
  * @param args.fontWeight - Font weight (400, 700, etc.)
- * @param args.fontBin - ArrayBuffer of custom font file (takes precedence over fontName)
+ * @param args.fontBin - ArrayBuffer of custom uploaded font file (takes precedence over all)
  * @returns A BufferGeometry ready for 3D rendering
  * @throws If font loading or geometry generation fails
  * 
@@ -90,7 +172,7 @@ async function getBinFont(buffer: ArrayBuffer): Promise<opentype.Font> {
  *   text: "Hello",
  *   fontSize: 72,
  *   width: 20,
- *   fontName: "Damion"
+ *   fontPath: "/fonts/MyFont.ttf"
  * });
  */
 async function generateGeometry(args: {
@@ -99,6 +181,7 @@ async function generateGeometry(args: {
   width?: number;
   kerning?: number | number[];
   fontName?: string;
+  fontPath?: string;
   fontVariant?: string;
   fontWeight?: string;
   fontBin?: ArrayBuffer;
@@ -107,13 +190,21 @@ async function generateGeometry(args: {
   const width = args.width || 20;
   const text = args.text || "Hello";
   const kerning = args.kerning || 0;
-  const font = args.fontBin
-    ? await getBinFont(args.fontBin)
-    : await getGoogleFont({
-        fontName: args.fontName!,
-        fontVariant: args.fontVariant,
-        fontWeight: args.fontWeight,
-      });
+  
+  // Determine which font to load (priority: fontBin > fontPath > fontName)
+  let font: opentype.Font;
+  if (args.fontBin) {
+    font = await getBinFont(args.fontBin);
+  } else if (args.fontPath) {
+    font = await getLocalFont(args.fontPath);
+  } else {
+    font = await getGoogleFont({
+      fontName: args.fontName!,
+      fontVariant: args.fontVariant,
+      fontWeight: args.fontWeight,
+    });
+  }
+  
   const geometry = TextMaker.stringToGeometry({
     font: font,
     text: text,
@@ -287,6 +378,7 @@ interface MainProps {}
 interface MainState {
   text: string;
   fontBin?: ArrayBuffer;
+  fontPath?: string;
   fontName: string;
   fontSize: string;
   width: string;
@@ -294,6 +386,7 @@ interface MainState {
   fontWeight: string;
   kerning: string;
   geometry: THREE.BufferGeometry | undefined;
+  localFonts: Array<{ name: string; path: string }>;
 }
 class Main extends React.Component<MainProps, MainState> {
   public state: MainState = {
@@ -305,7 +398,18 @@ class Main extends React.Component<MainProps, MainState> {
     fontWeight: "400",
     kerning: "0",
     geometry: undefined,
+    localFonts: [],
   };
+
+  public async componentDidMount() {
+    // Discover local fonts
+    await discoverLocalFonts();
+    this.setState({
+      localFonts: localFonts,
+    });
+    // Generate initial geometry
+    this.updateGeometry();
+  }
 
   private geometry: THREE.BufferGeometry;
 
@@ -313,6 +417,7 @@ class Main extends React.Component<MainProps, MainState> {
     const geometry = await generateGeometry({
       text: this.state.text,
       fontBin: this.state.fontBin,
+      fontPath: this.state.fontPath,
       fontName: this.state.fontName,
       fontSize: parseFloat(this.state.fontSize),
       width: parseFloat(this.state.width),
@@ -375,10 +480,6 @@ class Main extends React.Component<MainProps, MainState> {
     }
   }
 
-  public componentDidMount() {
-    this.updateGeometry();
-  }
-
   private renderSettings() {
     return (
       <div>
@@ -401,24 +502,56 @@ class Main extends React.Component<MainProps, MainState> {
           <select
             style={{ width: controlWidth, margin: 10 }}
             value={this.state.fontName}
-            onChange={(event) =>
-              this.setState({
-                fontName: event.target.value,
-                fontBin: undefined,
-              })
-            }
+            onChange={(event) => {
+              const selectedValue = event.target.value;
+              // Check if it's a local font
+              const localFont = this.state.localFonts.find(
+                f => f.name === selectedValue
+              );
+              if (localFont) {
+                this.setState({
+                  fontName: selectedValue,
+                  fontPath: localFont.path,
+                  fontBin: undefined,
+                });
+              } else {
+                this.setState({
+                  fontName: selectedValue,
+                  fontPath: undefined,
+                  fontBin: undefined,
+                });
+              }
+            }}
           >
-            {Object.keys(googleFonts).map((a) =>
-              a === "default" ? null : (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              )
+            {/* Local fonts section */}
+            {this.state.localFonts.length > 0 && (
+              <optgroup label="Local Fonts">
+                {this.state.localFonts.map(font => (
+                  <option key={font.path} value={font.name}>
+                    {font.name}
+                  </option>
+                ))}
+              </optgroup>
             )}
+            
+            {/* Google Fonts section */}
+            <optgroup label="Google Fonts">
+              {Object.keys(googleFonts).map((a) =>
+                a === "default" ? null : (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                )
+              )}
+            </optgroup>
+            
+            {/* Custom uploaded font */}
             {!!this.state.fontBin && (
-              <option value={this.state.fontName}>
-                custom: {this.state.fontName}
-              </option>
+              <optgroup label="Uploaded">
+                <option value={this.state.fontName}>
+                  {this.state.fontName}
+                </option>
+              </optgroup>
             )}
           </select>
         </div>

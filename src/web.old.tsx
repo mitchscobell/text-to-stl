@@ -7,29 +7,9 @@ import * as googleFonts from "google-fonts-complete";
 import { fetch } from "cross-fetch";
 import isValidFilename from "valid-filename";
 
-/** Cache for loaded Google Fonts to avoid redundant network requests */
 const fontCache: { [name: string]: opentype.Font } = {};
-
-/** Width of form input controls in pixels */
 const controlWidth: number = 250;
 
-/**
- * Fetches and caches a Google Font by name.
- * 
- * @param args - Font request configuration
- * @param args.fontName - Name of the Google Font (e.g., "Roboto", "Damion")
- * @param args.fontVariant - Font variant like "normal" or "italic", defaults to "normal"
- * @param args.fontWeight - Font weight like "400", "700", defaults to "400"
- * @returns The loaded opentype.Font object
- * @throws If the font is not found in Google Fonts Complete
- * 
- * @example
- * const font = await getGoogleFont({
- *   fontName: "Roboto",
- *   fontVariant: "normal",
- *   fontWeight: "700"
- * });
- */
 async function getGoogleFont(args: {
   fontName: string;
   fontVariant?: string;
@@ -56,43 +36,10 @@ async function getGoogleFont(args: {
   return font;
 }
 
-/**
- * Loads a font from user-uploaded binary file (TTF/OTF).
- * 
- * @param buffer - The font file as an ArrayBuffer
- * @returns The loaded opentype.Font object
- * 
- * @example
- * const font = await getBinFont(fontArrayBuffer);
- */
 async function getBinFont(buffer: ArrayBuffer): Promise<opentype.Font> {
   return TextMaker.loadFont(buffer);
 }
 
-/**
- * Generates 3D BufferGeometry from text using the specified font and parameters.
- * Handles both Google Fonts and custom uploaded fonts.
- * 
- * @param args - Geometry generation options
- * @param args.text - The text to render
- * @param args.fontSize - Font size in pixels, defaults to 72
- * @param args.width - Extrusion depth (Z-axis), defaults to 20
- * @param args.kerning - Kerning adjustment, defaults to 0
- * @param args.fontName - Name of Google Font to use
- * @param args.fontVariant - Font variant (normal/italic)
- * @param args.fontWeight - Font weight (400, 700, etc.)
- * @param args.fontBin - ArrayBuffer of custom font file (takes precedence over fontName)
- * @returns A BufferGeometry ready for 3D rendering
- * @throws If font loading or geometry generation fails
- * 
- * @example
- * const geometry = await generateGeometry({
- *   text: "Hello",
- *   fontSize: 72,
- *   width: 20,
- *   fontName: "Damion"
- * });
- */
 async function generateGeometry(args: {
   text: string;
   fontSize?: number;

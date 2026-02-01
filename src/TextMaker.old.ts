@@ -1,36 +1,14 @@
 import * as opentype from "opentype.js";
 import * as THREE from "three";
 
-/**
- * Represents a single point on a font glyph contour.
- * @property x - X coordinate of the point
- * @property y - Y coordinate of the point
- * @property onCurve - Whether this point lies on the curve (true) or is an off-curve control point (false)
- */
 export interface ContourPoint {
   x: number;
   y: number;
   onCurve: boolean;
 }
 
-/** An array of ContourPoints representing a closed contour path in a glyph */
 export type Contour = ContourPoint[];
 
-/**
- * Converts a font glyph into THREE.Shape objects for 3D rendering.
- * Handles complex contours including holes using winding number algorithm.
- * 
- * @param glyph - The opentype.Glyph to convert
- * @returns Array of THREE.Shape objects, with holes properly assigned to outer contours
- * 
- * @example
- * const glyph = font.glyphs.get(65); // Get 'A' glyph
- * const shapes = glyphToShapes(glyph);
- * 
- * @remarks
- * Uses winding number algorithm: if the signed area is positive, the contour is a hole;
- * if negative, it's an outer contour. Holes are assigned to all outer shapes.
- */
 export function glyphToShapes(glyph: opentype.Glyph) {
   glyph.getMetrics();
   const shapes: THREE.Shape[] = [];
@@ -103,32 +81,6 @@ export function glyphToShapes(glyph: opentype.Glyph) {
   return shapes;
 }
 
-/**
- * Converts text string into a 3D BufferGeometry using a specified font.
- * Creates extruded text geometry with proper kerning and positioning.
- * 
- * @param args - Configuration object
- * @param args.font - The opentype.Font to render with
- * @param args.text - The text string to convert
- * @param args.size - Font size in pixels
- * @param args.width - Extrusion depth (Z-axis)
- * @param args.kerning - Kerning adjustment (number or array of per-character adjustments), defaults to 0
- * @returns A THREE.BufferGeometry ready for rendering or export
- * 
- * @example
- * const geometry = stringToGeometry({
- *   font: myFont,
- *   text: "Hello",
- *   size: 72,
- *   width: 20,
- *   kerning: 5
- * });
- * 
- * @remarks
- * - Combines multiple glyph geometries into a single merged BufferGeometry
- * - Uses ExtrudeGeometry for 3D depth
- * - Properly handles kerning for typography-accurate rendering
- */
 export function stringToGeometry(args: {
   font: opentype.Font;
   text: string;
@@ -214,44 +166,11 @@ export function stringToGeometry(args: {
   return merged;
 }
 
-/**
- * Loads and parses a font from an ArrayBuffer (TTF/OTF binary data).
- * 
- * @param arg - The font file as an ArrayBuffer
- * @returns The parsed opentype.Font object
- * @throws If the buffer contains invalid font data
- * 
- * @example
- * const fontBuffer = await fetch('font.ttf').then(r => r.arrayBuffer());
- * const font = loadFont(fontBuffer);
- */
 export function loadFont(arg: ArrayBuffer): opentype.Font {
   const font = opentype.parse(arg);
   return font;
 }
 
-/**
- * Exports a THREE.BufferGeometry to binary STL (STereoLithography) format.
- * Generates complete STL file structure with triangle normals and vertices.
- * 
- * @param geometry - The BufferGeometry to export
- * @returns An ArrayBuffer containing binary STL data ready for file download
- * 
- * @example
- * const geometry = stringToGeometry({ font, text: "Hello", size: 72, width: 20 });
- * const stlBuffer = geometryToSTL(geometry);
- * const blob = new Blob([stlBuffer], { type: 'application/octet-stream' });
- * // Save blob or download it
- * 
- * @remarks
- * Binary STL format structure:
- * - 80-byte header
- * - 4-byte triangle count (uint32, little-endian)
- * - Per triangle (50 bytes each):
- *   - 3x4 bytes: normal vector (float32)
- *   - 3x(3x4 bytes): three vertices (float32)
- *   - 2 bytes: attribute byte count (usually 0)
- */
 export function geometryToSTL(geometry: THREE.BufferGeometry) {
   // Simple binary STL exporter
   const posAttr = geometry.getAttribute("position");

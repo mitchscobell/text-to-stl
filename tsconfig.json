@@ -20,6 +20,6 @@
     "esModuleInterop": true
   },
   "include": ["src/**/*", "types/**/*"],
-  "exclude": ["src/cli.ts"],
+  "exclude": ["src/cli.ts", "src/*.old.ts", "src/*.old.tsx"],
   "compileOnSave": true
 }

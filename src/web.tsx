@@ -2,7 +2,7 @@ import * as React from "react";
 import ReactDOM from "react-dom";
 import * as TextMaker from "./TextMaker";
 import * as THREE from "three";
-import OrbitControls from "three-orbit-controls";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as googleFonts from "google-fonts-complete";
 import { fetch } from "cross-fetch";
 import isValidFilename from "valid-filename";
@@ -123,7 +123,7 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
       this.surface.appendChild(this.renderer.domElement);
     }
 
-    this.controls = new (OrbitControls(THREE))(
+    this.controls = new OrbitControls(
       this.camera,
       this.renderer.domElement
     );

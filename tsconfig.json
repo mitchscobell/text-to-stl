@@ -20,5 +20,6 @@
     "esModuleInterop": true
   },
   "include": ["src/**/*", "types/**/*"],
+  "exclude": ["src/cli.ts"],
   "compileOnSave": true
 }

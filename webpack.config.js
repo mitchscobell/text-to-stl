@@ -18,6 +18,23 @@ module.exports = {
         test: /\.(png|jpg|jpeg)$/,
         use: "url-loader",
       },
+      {
+        test: /\.css$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: [
+                  '@tailwindcss/postcss',
+                ],
+              },
+            },
+          },
+        ],
+      },
     ],
   },
 
@@ -28,6 +45,9 @@ module.exports = {
       inject: "body",
       title: "Text to STL",
       favicon: "./src/images/favicon.png",
+      meta: {
+        viewport: "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      }
     }),
     new CopyPlugin({
       patterns: [

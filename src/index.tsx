@@ -6,12 +6,10 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import * as googleFonts from "google-fonts-complete";
 import { fetch } from "cross-fetch";
 import isValidFilename from "valid-filename";
+import "./styles.css";
 
 /** Cache for loaded fonts to avoid redundant network requests */
 const fontCache: { [name: string]: opentype.Font } = {};
-
-/** Width of form input controls in pixels */
-const controlWidth: number = 250;
 
 /** Discovered local fonts */
 let localFonts: Array<{ name: string; path: string }> = [];
@@ -388,6 +386,7 @@ interface MainState {
   kerning: string;
   geometry: THREE.BufferGeometry | undefined;
   localFonts: Array<{ name: string; path: string }>;
+  settingsExpanded: boolean;
 }
 class Main extends React.Component<MainProps, MainState> {
   public state: MainState = {
@@ -400,47 +399,61 @@ class Main extends React.Component<MainProps, MainState> {
     kerning: "0",
     geometry: undefined,
     localFonts: [],
+    settingsExpanded: false,
   };
 
   public async componentDidMount() {
     // Discover local fonts
     await discoverLocalFonts();
+    
+    // Set default font to local font if available
+    const defaultFont = localFonts.length > 0 
+      ? { fontName: localFonts[0].name, fontPath: localFonts[0].path }
+      : { fontName: "Damion" };
+    
     this.setState({
       localFonts: localFonts,
+      ...defaultFont,
     });
-    // Generate initial geometry
-    this.updateGeometry();
+    
+    // Generate initial geometry after setting the font
+    setTimeout(() => this.updateGeometry(), 100);
   }
 
   private geometry: THREE.BufferGeometry;
 
   private async updateGeometry() {
-    const geometry = await generateGeometry({
-      text: this.state.text,
-      fontBin: this.state.fontBin,
-      fontPath: this.state.fontPath,
-      fontName: this.state.fontName,
-      fontSize: parseFloat(this.state.fontSize),
-      width: parseFloat(this.state.width),
-      fontWeight: this.state.fontWeight,
-      fontVariant: this.state.fontVariant,
-      kerning:
-        this.state.kerning.indexOf(",") >= 0
-          ? this.state.kerning.split(",").map(parseFloat)
-          : parseFloat(this.state.kerning),
-    });
-    this.geometry = geometry;
-    geometry.computeBoundingBox();
-    const boundingBoxMaxX = geometry.boundingBox ? -geometry.boundingBox.max.x : 0;
-    const boundingBoxMaxY = geometry.boundingBox ? -geometry.boundingBox.max.y : 0;
-    geometry.applyMatrix4(
-      new THREE.Matrix4().makeTranslation(
-        boundingBoxMaxX / 2,
-        boundingBoxMaxY / 2,
-        0
-      )
-    );
-    this.setState({ geometry: geometry });
+    try {
+      const geometry = await generateGeometry({
+        text: this.state.text,
+        fontBin: this.state.fontBin,
+        fontPath: this.state.fontPath,
+        fontName: this.state.fontName,
+        fontSize: parseFloat(this.state.fontSize),
+        width: parseFloat(this.state.width),
+        fontWeight: this.state.fontWeight,
+        fontVariant: this.state.fontVariant,
+        kerning:
+          this.state.kerning.indexOf(",") >= 0
+            ? this.state.kerning.split(",").map(parseFloat)
+            : parseFloat(this.state.kerning),
+      });
+      this.geometry = geometry;
+      geometry.computeBoundingBox();
+      const boundingBoxMaxX = geometry.boundingBox ? -geometry.boundingBox.max.x : 0;
+      const boundingBoxMaxY = geometry.boundingBox ? -geometry.boundingBox.max.y : 0;
+      geometry.applyMatrix4(
+        new THREE.Matrix4().makeTranslation(
+          boundingBoxMaxX / 2,
+          boundingBoxMaxY / 2,
+          0
+        )
+      );
+      this.setState({ geometry: geometry });
+    } catch (error) {
+      console.error("Failed to generate geometry:", error);
+      // Keep the current geometry or use a placeholder
+    }
   }
 
   private download() {
@@ -470,6 +483,7 @@ class Main extends React.Component<MainProps, MainState> {
     if (
       prevState.text !== this.state.text ||
       prevState.fontBin !== this.state.fontBin ||
+      prevState.fontPath !== this.state.fontPath ||
       prevState.fontName !== this.state.fontName ||
       prevState.fontSize !== this.state.fontSize ||
       prevState.fontVariant !== this.state.fontVariant ||
@@ -483,196 +497,238 @@ class Main extends React.Component<MainProps, MainState> {
 
   private renderSettings() {
     return (
-      <div>
-        <div>
-          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-            Text
-          </label>
-          <input
-            style={{ width: controlWidth, margin: 10 }}
-            type="text"
-            value={this.state.text}
-            onChange={(event) => this.setState({ text: event.target.value })}
-          />
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 shadow-lg">
+          <h1 className="text-2xl font-bold">Text to STL</h1>
+          <p className="text-sm text-blue-100">Convert text to 3D models</p>
         </div>
 
-        <div>
-          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-            Font
-          </label>
-          <select
-            style={{ width: controlWidth, margin: 10 }}
-            value={this.state.fontName}
-            onChange={(event) => {
-              const selectedValue = event.target.value;
-              // Check if it's a local font
-              const localFont = this.state.localFonts.find(
-                f => f.name === selectedValue
-              );
-              if (localFont) {
-                this.setState({
-                  fontName: selectedValue,
-                  fontPath: localFont.path,
-                  fontBin: undefined,
-                });
-              } else {
-                this.setState({
-                  fontName: selectedValue,
-                  fontPath: undefined,
-                  fontBin: undefined,
-                });
-              }
-            }}
-          >
-            {/* Local fonts section */}
-            {this.state.localFonts.length > 0 && (
-              <optgroup label="Local Fonts">
-                {this.state.localFonts.map(font => (
-                  <option key={font.path} value={font.name}>
-                    {font.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            
-            {/* Google Fonts section */}
-            <optgroup label="Google Fonts">
-              {Object.keys(googleFonts).map((a) =>
-                a === "default" ? null : (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                )
-              )}
-            </optgroup>
-            
-            {/* Custom uploaded font */}
-            {!!this.state.fontBin && (
-              <optgroup label="Uploaded">
-                <option value={this.state.fontName}>
-                  {this.state.fontName}
-                </option>
-              </optgroup>
-            )}
-          </select>
-        </div>
-
-        <div>
-          <label
-            style={{ display: "inline-block", width: 80, margin: 10 }}
-          ></label>
-          <input
-            style={{ width: controlWidth, margin: 10 }}
-            type="file"
-            accept=".ttf"
-            onChange={async (e) => {
-              const file = e.target.files![0];
-              const buffer = await new Promise<ArrayBuffer>(
-                (resolve, reject) => {
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    resolve(reader.result as ArrayBuffer);
-                  };
-                  reader.onerror = (e) => {
-                    reject(e);
-                  };
-                  reader.readAsArrayBuffer(file);
-                }
-              );
-              this.setState({ fontName: file.name, fontBin: buffer });
-            }}
-          />
-        </div>
-
-        {googleFonts[this.state.fontName] && (
-          <div>
-            <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-              Variant
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Text Input - Always Visible */}
+          <div className="bg-white rounded-lg shadow-md p-4">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Text
             </label>
-            <select
-              style={{ width: controlWidth, margin: 10 }}
-              value={this.state.fontVariant}
-              onChange={(event) =>
-                this.setState({ fontVariant: event.target.value })
-              }
-            >
-              {Object.keys(googleFonts[this.state.fontName].variants).map(
-                (i) => (
-                  <option key={i} value={i}>
-                    {i}
-                  </option>
-                )
-              )}
-            </select>
+            <input
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+              type="text"
+              value={this.state.text}
+              onChange={(event) => this.setState({ text: event.target.value })}
+            />
           </div>
-        )}
-        {googleFonts[this.state.fontName] &&
-          googleFonts[this.state.fontName].variants[this.state.fontVariant] && (
-            <div>
-              <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-                Weight
-              </label>
-              <select
-                style={{ width: controlWidth, margin: 10 }}
-                value={this.state.fontWeight}
-                onChange={(event) =>
-                  this.setState({ fontWeight: event.target.value })
-                }
+
+          {/* Font Settings - Collapsible */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <button
+              className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 transition flex items-center justify-between"
+              onClick={() => this.setState({ settingsExpanded: !this.state.settingsExpanded })}
+            >
+              <span className="font-semibold text-gray-700">Font & Settings</span>
+              <svg
+                className={`w-5 h-5 transform transition-transform ${
+                  this.state.settingsExpanded ? "rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {Object.keys(
-                  googleFonts[this.state.fontName].variants[
-                    this.state.fontVariant
-                  ]
-                ).map((i) => (
-                  <option key={i} value={i}>
-                    {i}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
 
-        <div>
-          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-            Size
-          </label>
-          <input
-            style={{ width: controlWidth, margin: 10 }}
-            type="text"
-            value={this.state.fontSize}
-            onChange={(event) =>
-              this.setState({ fontSize: event.target.value })
-            }
-          />
+            {this.state.settingsExpanded && (
+              <div className="p-4 space-y-4">
+                {/* Font Select */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Font
+                  </label>
+                  <select
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    value={this.state.fontName}
+                    onChange={(event) => {
+                      const selectedValue = event.target.value;
+                      const localFont = this.state.localFonts.find(
+                        f => f.name === selectedValue
+                      );
+                      if (localFont) {
+                        this.setState({
+                          fontName: selectedValue,
+                          fontPath: localFont.path,
+                          fontBin: undefined,
+                        });
+                      } else {
+                        this.setState({
+                          fontName: selectedValue,
+                          fontPath: undefined,
+                          fontBin: undefined,
+                        });
+                      }
+                    }}
+                  >
+                    {this.state.localFonts.length > 0 && (
+                      <optgroup label="Local Fonts">
+                        {this.state.localFonts.map(font => (
+                          <option key={font.path} value={font.name}>
+                            {font.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                    <optgroup label="Google Fonts">
+                      {Object.keys(googleFonts).map((a) =>
+                        a === "default" ? null : (
+                          <option key={a} value={a}>
+                            {a}
+                          </option>
+                        )
+                      )}
+                    </optgroup>
+                    {!!this.state.fontBin && (
+                      <optgroup label="Uploaded">
+                        <option value={this.state.fontName}>
+                          {this.state.fontName}
+                        </option>
+                      </optgroup>
+                    )}
+                  </select>
+                </div>
+
+                {/* File Upload */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Upload Custom Font
+                  </label>
+                  <input
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm"
+                    type="file"
+                    accept=".ttf"
+                    onChange={async (e) => {
+                      const file = e.target.files![0];
+                      const buffer = await new Promise<ArrayBuffer>(
+                        (resolve, reject) => {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            resolve(reader.result as ArrayBuffer);
+                          };
+                          reader.onerror = (e) => {
+                            reject(e);
+                          };
+                          reader.readAsArrayBuffer(file);
+                        }
+                      );
+                      this.setState({ fontName: file.name, fontBin: buffer });
+                    }}
+                  />
+                </div>
+
+                {/* Variant - Only for Google Fonts */}
+                {googleFonts[this.state.fontName] && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Variant
+                    </label>
+                    <select
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                      value={this.state.fontVariant}
+                      onChange={(event) =>
+                        this.setState({ fontVariant: event.target.value })
+                      }
+                    >
+                      {Object.keys(googleFonts[this.state.fontName].variants).map(
+                        (i) => (
+                          <option key={i} value={i}>
+                            {i}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </div>
+                )}
+
+                {/* Weight - Only for Google Fonts */}
+                {googleFonts[this.state.fontName] &&
+                  googleFonts[this.state.fontName].variants[this.state.fontVariant] && (
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Weight
+                      </label>
+                      <select
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                        value={this.state.fontWeight}
+                        onChange={(event) =>
+                          this.setState({ fontWeight: event.target.value })
+                        }
+                      >
+                        {Object.keys(
+                          googleFonts[this.state.fontName].variants[
+                            this.state.fontVariant
+                          ]
+                        ).map((i) => (
+                          <option key={i} value={i}>
+                            {i}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                {/* Size */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Size
+                  </label>
+                  <input
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    type="text"
+                    value={this.state.fontSize}
+                    onChange={(event) =>
+                      this.setState({ fontSize: event.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Kerning */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Kerning
+                  </label>
+                  <input
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    type="text"
+                    value={this.state.kerning}
+                    onChange={(event) => this.setState({ kerning: event.target.value })}
+                  />
+                </div>
+
+                {/* Width */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Width
+                  </label>
+                  <input
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
+                    type="text"
+                    value={this.state.width}
+                    onChange={(event) => this.setState({ width: event.target.value })}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div>
-          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-            Kerning
-          </label>
-          <input
-            style={{ width: controlWidth, margin: 10 }}
-            type="text"
-            value={this.state.kerning}
-            onChange={(event) => this.setState({ kerning: event.target.value })}
-          />
-        </div>
-
-        <div>
-          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-            Width
-          </label>
-          <input
-            style={{ width: controlWidth, margin: 10 }}
-            type="text"
-            value={this.state.width}
-            onChange={(event) => this.setState({ width: event.target.value })}
-          />
-        </div>
-
-        <div>
+        {/* Download Button - Fixed at Bottom */}
+        <div className="p-4 bg-white border-t border-gray-200">
           <button
-            style={{ alignSelf: "center", margin: 10 }}
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transition transform hover:scale-105"
             onClick={() => this.download()}
           >
             Download .STL
@@ -684,21 +740,37 @@ class Main extends React.Component<MainProps, MainState> {
 
   public render() {
     return (
-      <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
-        <div
-          style={{ display: "flex", width: 400, backgroundColor: "powderblue" }}
-        >
+      <div className="flex flex-col lg:flex-row h-screen w-screen overflow-hidden bg-gray-100">
+        {/* Settings Panel - Responsive */}
+        <div className={`
+          ${this.state.settingsExpanded ? 'h-3/5 lg:h-full' : 'h-auto lg:h-full'}
+          w-full lg:w-96 
+          bg-gray-50 
+          shadow-lg 
+          flex flex-col
+          transition-all duration-300
+        `}>
           {this.renderSettings()}
         </div>
-        <ThreePreview
-          geometry={this.state.geometry}
-          style={{ display: "flex", flex: 1 }}
-        />
+        
+        {/* 3D Preview - Takes remaining space */}
+        <div className="flex-1 relative">
+          <ThreePreview
+            geometry={this.state.geometry}
+            style={{ width: '100%', height: '100%' }}
+          />
+        </div>
       </div>
     );
   }
 }
 
 const element = document.createElement("div");
+element.id = "root";
+element.style.height = "100vh";
+element.style.width = "100vw";
+element.style.margin = "0";
+element.style.padding = "0";
+element.style.overflow = "hidden";
 document.querySelector("body")!.appendChild(element);
 ReactDOM.render(<Main />, element);

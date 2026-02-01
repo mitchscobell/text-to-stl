@@ -8,6 +8,8 @@
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+**[🌐 Live Demo: https://text2stl.mscob.com/](https://text2stl.mscob.com/)**
+
 Convert text to 3D STL files for 3D printing. Uses Three.js for 3D rendering and OpenType.js for font parsing.
 
 ## 🚀 Quick Start with Docker
@@ -25,7 +27,6 @@ docker-compose up
 ```
 
 The app will be available at `http://localhost:3000`
-
 ### Stop the application
 ```bash
 docker-compose down
@@ -100,14 +101,23 @@ Returns version information in JSON format:
 - Deployment verification
 - Version tracking across environments
 
-## 🔄 Continuous Integration
+## 🔄 Continuous Integration & Release
 
 GitHub Actions automatically on every push to `master`:
 
 1. **Lint** - Runs ESLint (`npm run lint`)
 2. **Build** - Creates production bundle (`npm run build`)
 3. **Version Bump** - Increments patch version in `package.json`
-4. **Auto-commit** - Commits version change back to repository
+4. **Auto-commit** - Commits version change back to repository with `[skip ci]` flag
+5. **GitHub Release** - Creates a new release with auto-generated tag (v{version})
+
+### Automated Release Process
+
+Every successful build to `master` creates a GitHub Release that can be used for:
+- Version tracking and changelog
+- Deployment verification across environments
+- Portainer GitOps auto-deployment
+- Release notes and artifact management
 
 View workflow: [.github/workflows/build.yml](.github/workflows/build.yml)
 
@@ -170,8 +180,8 @@ The app automatically discovers fonts via:
 
 ```bash
 npm run dev          # Start dev server at http://localhost:8081
-npm run build        # Build production bundle
-npm run lint         # Check code quality
+npm run build        # Build production bundle with version generation
+npm run lint         # Check code quality with ESLint
 npm run lint:fix     # Auto-fix linting issues
 ```
 

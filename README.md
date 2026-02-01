@@ -1,6 +1,7 @@
 # Text to STL
 
 [![CI](https://github.com/mitchscobell/text-to-stl/actions/workflows/build.yml/badge.svg)](https://github.com/mitchscobell/text-to-stl/actions/workflows/build.yml)
+[![Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Ftext2stl.mscob.com%2Fversion.json&query=%24.version&label=Deployed%20Version)](https://text2stl.mscob.com/version)
 [![React](https://img.shields.io/badge/React-18.2.0-61dafb?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.1.6-3178c6?logo=typescript)](https://www.typescriptlang.org/)
 [![Three.js](https://img.shields.io/badge/Three.js-0.182.0-black?logo=threedotjs)](https://threejs.org/)

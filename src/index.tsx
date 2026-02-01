@@ -34,7 +34,7 @@ async function discoverLocalFonts(): Promise<void> {
       localFonts = index.fonts || [];
       return;
     }
-  } catch (error) {
+  } catch {
     // Continue to discovery
   }
 
@@ -61,7 +61,7 @@ async function discoverLocalFonts(): Promise<void> {
           });
           break;
         }
-      } catch (error) {
+      } catch {
         // Font doesn't exist, continue
       }
     }
@@ -217,7 +217,7 @@ async function generateGeometry(args: {
 
 interface ThreePreviewProps {
   geometry?: THREE.BufferGeometry;
-  style?: any;
+  style?: React.CSSProperties;
 }
 
 class ThreePreview extends React.Component<ThreePreviewProps, {}> {
@@ -231,7 +231,7 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
   private surface: HTMLDivElement | null;
   private container: HTMLDivElement | null;
   private size?: { width: number; height: number };
-  private controls: any;
+  private controls: OrbitControls;
 
   public componentWillUnmount() {
     this.active = false;
@@ -328,9 +328,10 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
       }
     }
     this.frame++;
-    if (this.mesh && 0) {
-      this.mesh.rotation.x = 0.005 * this.frame;
-    }
+    // Animation disabled
+    // if (this.mesh) {
+    //   this.mesh.rotation.x = 0.005 * this.frame;
+    // }
     // this.mesh.rotation.y = 0.002 * this.frame;
     this.camera.lookAt(this.scene.position);
     this.renderer.render(this.scene, this.camera);

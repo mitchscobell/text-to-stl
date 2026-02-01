@@ -1,13 +1,11 @@
-const webpack = require("webpack");
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 
-let config = (module.exports = {
+module.exports = {
   context: path.resolve(__dirname),
 
   mode: "production",
-  //mode: "development",
 
   module: {
     rules: [
@@ -41,20 +39,19 @@ let config = (module.exports = {
   target: "web",
 
   resolve: {
-    extensions: [".web.tsx", ".tsx", ".web.ts", ".ts", ".web.js", ".js"],
+    extensions: [".tsx", ".ts", ".js"],
   },
 
   output: {
     path: path.resolve("./dist"),
     filename: "[name].js",
-    pathinfo: true,
   },
 
   entry: {
     index: "./src/index.tsx",
   },
-  
+
   performance: {
-    hints: false
+    hints: false,
   },
-});
+};

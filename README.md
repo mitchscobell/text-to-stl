@@ -5,10 +5,31 @@ Convert text to 3D STL files for 3D printing. Uses Three.js for 3D rendering and
 ## Features
 
 - Real-time 3D text preview
-- Support for Google Fonts and custom font uploads
+- Support for Google Fonts, local custom fonts, and user uploads
+- Local fonts automatically discovered and available in dropdown
 - Adjustable text size and extrusion depth
 - Interactive 3D viewer with rotation and zoom
 - Direct STL file download
+
+## Using Custom Fonts
+
+Place TrueType or OpenType font files (`.ttf`, `.otf`, etc.) in the `fonts/` directory. They will be automatically discovered and available in the font dropdown on app startup.
+
+**Included fonts:**
+- Amity Jack
+- Milwaukee-Packout-HelveticaFont
+- RogueFitness-AeroExtended Regular
+- Ryobi-Pulp Fiction Italic M54
+- Ryobi-Pulp Fiction M54
+
+To add more fonts, simply copy font files to `fonts/` and rebuild:
+
+```bash
+cp /path/to/myfont.ttf fonts/
+npm run build
+```
+
+The new font will be available in the "Local Fonts" section of the dropdown immediately.
 
 ## Development
 
@@ -44,7 +65,7 @@ Output will be in the `dist/` directory. Deploy the `dist/` folder to your web s
 - **TypeScript** - Type safety
 - **Three.js 0.182.0** - 3D graphics
 - **OpenType.js 1.3.4** - Font parsing
-- **Webpack 5** - Module bundler
+- **Webpack 5** - Module bundler with copy-webpack-plugin for font assets
 - **Google Fonts Complete** - Font library
 
 ## Project Structure
@@ -54,13 +75,20 @@ src/
   ├── index.tsx        - Main React component and UI
   ├── TextMaker.ts     - Core text-to-geometry conversion and STL export
   └── images/          - Favicon and assets
-fonts/                 - Custom fonts (for future use)
+fonts/                 - Custom TrueType/OpenType fonts (auto-discovered at runtime)
 dist/                  - Production build output
+public/                - Static assets (favicon, fonts)
 ```
 
-## Fonts
+## How It Works
 
-Custom fonts can be placed in the `fonts/` directory for future integration.
+1. **Font Discovery**: On app startup, the app automatically scans for available fonts by attempting to fetch font files
+2. **Font Dropdown Groups**: Fonts are organized into three categories:
+   - **Local Fonts**: Custom fonts from the `fonts/` directory
+   - **Google Fonts**: Complete Google Fonts library
+   - **Uploaded**: Any font uploaded via the file picker
+3. **Geometry Generation**: Selected font is used to render text as 3D geometry
+4. **STL Export**: 3D geometry is exported as binary STL format for 3D printing
 
 ## Forked from
 

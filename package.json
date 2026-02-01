@@ -3,10 +3,8 @@
   "version": "1.0.0",
   "description": "create .stl files from font",
   "scripts": {
-    "tslint": "tslint --project .",
-    "tsc": "tsc",
-    "webpack-dev-server": "webpack-dev-server",
-    "webpack": "webpack"
+    "build": "webpack",
+    "dev": "webpack serve"
   },
   "repository": {
     "type": "git",

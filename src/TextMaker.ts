@@ -1,7 +1,6 @@
 import * as opentype from "opentype.js";
 import * as THREE from "three";
 import * as exportSTL from "threejs-export-stl";
-import { BufferGeometryUtils } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 export interface ContourPoint {
   x: number;
@@ -121,8 +120,51 @@ export function stringToGeometry(args: {
       geometries.push(geometry);
     }
   );
-  const merged = BufferGeometryUtils.mergeBufferGeometries(geometries);
-  return merged || geometries[0];
+  // Manually merge geometries
+  if (geometries.length === 0) {
+    throw new Error("No geometries generated");
+  }
+  if (geometries.length === 1) {
+    return geometries[0];
+  }
+  
+  const merged = new THREE.BufferGeometry();
+  let offset = 0;
+  const positions: number[] = [];
+  const normals: number[] = [];
+  
+  for (const geo of geometries) {
+    const posAttr = geo.getAttribute("position");
+    const normAttr = geo.getAttribute("normal");
+    
+    if (posAttr) {
+      for (let i = 0; i < posAttr.count; i++) {
+        positions.push(
+          posAttr.getX(i),
+          posAttr.getY(i),
+          posAttr.getZ(i)
+        );
+      }
+    }
+    
+    if (normAttr) {
+      for (let i = 0; i < normAttr.count; i++) {
+        normals.push(
+          normAttr.getX(i),
+          normAttr.getY(i),
+          normAttr.getZ(i)
+        );
+      }
+    }
+    offset += posAttr.count;
+  }
+  
+  merged.setAttribute("position", new THREE.BufferAttribute(new Float32Array(positions), 3));
+  if (normals.length > 0) {
+    merged.setAttribute("normal", new THREE.BufferAttribute(new Float32Array(normals), 3));
+  }
+  
+  return merged;
 }
 
 export function loadFont(arg: ArrayBuffer): opentype.Font {
@@ -131,9 +173,6 @@ export function loadFont(arg: ArrayBuffer): opentype.Font {
 }
 
 export function geometryToSTL(geometry: THREE.BufferGeometry) {
-  const tmp = geometry.type;
-  geometry.type = "Geometry"; // bug in exportSTL?
   const data = exportSTL.fromGeometry(geometry);
-  geometry.type = tmp;
   return data;
 }

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Version - Text to STL</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+        }
+        .version-info {
+            background: #f5f5f5;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .version-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .version-item:last-child {
+            border-bottom: none;
+        }
+        .label {
+            color: #666;
+            font-weight: 600;
+        }
+        .value {
+            color: #333;
+            font-family: 'Courier New', monospace;
+            text-align: right;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #4caf50;
+            font-weight: 600;
+            text-align: center;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            background: #4caf50;
+            border-radius: 50%;
+        }
+        .footer {
+            text-align: center;
+            color: #999;
+            margin-top: 30px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Text to STL</h1>
+        <div class="version-info" id="version-info">
+            <div class="version-item">
+                <span class="label">Status</span>
+                <span class="status">
+                    <span class="status-dot"></span>
+                    Healthy
+                </span>
+            </div>
+            <div class="version-item" id="version-row">
+                <span class="label">Version</span>
+                <span class="value">Loading...</span>
+            </div>
+            <div class="version-item" id="build-date-row">
+                <span class="label">Build Date</span>
+                <span class="value">Loading...</span>
+            </div>
+            <div class="version-item" id="environment-row">
+                <span class="label">Environment</span>
+                <span class="value">Loading...</span>
+            </div>
+        </div>
+        <div class="footer">
+            <p>This endpoint is used for health checks and version verification.</p>
+            <p>JSON API: <code>/version.json</code></p>
+        </div>
+    </div>
+
+    <script>
+        // Load and display version info
+        fetch('/version.json')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('version-row').innerHTML = 
+                    `<span class="label">Version</span><span class="value">${data.version}</span>`;
+                document.getElementById('build-date-row').innerHTML = 
+                    `<span class="label">Build Date</span><span class="value">${new Date(data.buildDate).toLocaleString()}</span>`;
+                document.getElementById('environment-row').innerHTML = 
+                    `<span class="label">Environment</span><span class="value">${data.environment}</span>`;
+            })
+            .catch(error => {
+                console.error('Error loading version:', error);
+                document.getElementById('version-info').innerHTML = 
+                    '<p style="color: #f44336;">Error loading version information</p>';
+            });
+    </script>
+</body>
+</html>

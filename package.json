@@ -40,7 +40,6 @@
     "serialize-javascript": "^6.0.2",
     "three": "^0.182.0",
     "three-orbit-controls": "^82.1.0",
-    "threejs-export-stl": "0.0.4",
     "ts-loader": "^9.4.4",
     "valid-filename": "^4.0.0",
     "ws": "^8.17.1"

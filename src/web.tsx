@@ -49,7 +49,7 @@ async function generateGeometry(args: {
   fontVariant?: string;
   fontWeight?: string;
   fontBin?: ArrayBuffer;
-}): Promise<THREE.Geometry> {
+}): Promise<THREE.BufferGeometry> {
   const fontSize = args.fontSize || 72;
   const width = args.width || 20;
   const text = args.text || "Hello";
@@ -72,7 +72,7 @@ async function generateGeometry(args: {
 }
 
 interface ThreePreviewProps {
-  geometry?: THREE.Geometry;
+  geometry?: THREE.BufferGeometry;
   style?: any;
 }
 
@@ -82,7 +82,7 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
-  private geometry?: THREE.Geometry;
+  private geometry?: THREE.BufferGeometry;
   private mesh?: THREE.Mesh;
   private surface: HTMLDivElement | null;
   private container: HTMLDivElement | null;
@@ -146,7 +146,7 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
     }
   }
 
-  public setGeometry(geometry: THREE.Geometry | undefined) {
+  public setGeometry(geometry: THREE.BufferGeometry | undefined) {
     if (this.mesh) {
       this.scene.remove(this.mesh);
       this.mesh = undefined;
@@ -240,7 +240,7 @@ interface MainState {
   fontVariant: string;
   fontWeight: string;
   kerning: string;
-  geometry: THREE.Geometry | undefined;
+  geometry: THREE.BufferGeometry | undefined;
 }
 class Main extends React.Component<MainProps, MainState> {
   public state: MainState = {
@@ -254,7 +254,7 @@ class Main extends React.Component<MainProps, MainState> {
     geometry: undefined,
   };
 
-  private geometry: THREE.Geometry;
+  private geometry: THREE.BufferGeometry;
 
   private async updateGeometry() {
     const geometry = await generateGeometry({

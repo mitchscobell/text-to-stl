@@ -1,6 +1,6 @@
 {
   "version": "3.0.3",
-  "buildDate": "2026-02-01T13:52:48.807Z",
+  "buildDate": "2026-02-01T13:56:58.811Z",
   "environment": "production",
   "name": "text-to-stl",
   "description": "create .stl files from font"

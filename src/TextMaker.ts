@@ -1,6 +1,5 @@
 import * as opentype from "opentype.js";
 import * as THREE from "three";
-import * as exportSTL from "threejs-export-stl";
 
 export interface ContourPoint {
   x: number;
@@ -173,6 +172,131 @@ export function loadFont(arg: ArrayBuffer): opentype.Font {
 }
 
 export function geometryToSTL(geometry: THREE.BufferGeometry) {
-  const data = exportSTL.fromGeometry(geometry);
-  return data;
+  // Simple binary STL exporter
+  const posAttr = geometry.getAttribute("position");
+  const indexAttr = geometry.getIndex();
+  
+  const triangles = indexAttr ? indexAttr.count / 3 : posAttr.count / 3;
+  const buffer = new ArrayBuffer(80 + 4 + triangles * 50);
+  const view = new DataView(buffer);
+  const vertices = [];
+  
+  // Read positions
+  for (let i = 0; i < posAttr.count; i++) {
+    vertices.push(
+      posAttr.getX(i),
+      posAttr.getY(i),
+      posAttr.getZ(i)
+    );
+  }
+  
+  // Write header (80 bytes of anything)
+  const header = new Uint8Array(buffer, 0, 80);
+  const headerStr = "Three.js STL Exporter";
+  for (let i = 0; i < headerStr.length; i++) {
+    header[i] = headerStr.charCodeAt(i);
+  }
+  
+  // Write number of triangles
+  view.setUint32(80, triangles, true);
+  
+  let offset = 84;
+  
+  // Write triangles
+  if (indexAttr) {
+    for (let i = 0; i < indexAttr.count; i += 3) {
+      const i0 = indexAttr.getX(i) * 3;
+      const i1 = indexAttr.getX(i + 1) * 3;
+      const i2 = indexAttr.getX(i + 2) * 3;
+      
+      // Calculate normal
+      const v0 = [vertices[i0], vertices[i0 + 1], vertices[i0 + 2]];
+      const v1 = [vertices[i1], vertices[i1 + 1], vertices[i1 + 2]];
+      const v2 = [vertices[i2], vertices[i2 + 1], vertices[i2 + 2]];
+      
+      const e1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
+      const e2 = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
+      
+      const normal = [
+        e1[1] * e2[2] - e1[2] * e2[1],
+        e1[2] * e2[0] - e1[0] * e2[2],
+        e1[0] * e2[1] - e1[1] * e2[0]
+      ];
+      
+      const len = Math.sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
+      if (len > 0) {
+        normal[0] /= len;
+        normal[1] /= len;
+        normal[2] /= len;
+      }
+      
+      view.setFloat32(offset, normal[0], true);
+      view.setFloat32(offset + 4, normal[1], true);
+      view.setFloat32(offset + 8, normal[2], true);
+      offset += 12;
+      
+      view.setFloat32(offset, v0[0], true);
+      view.setFloat32(offset + 4, v0[1], true);
+      view.setFloat32(offset + 8, v0[2], true);
+      offset += 12;
+      
+      view.setFloat32(offset, v1[0], true);
+      view.setFloat32(offset + 4, v1[1], true);
+      view.setFloat32(offset + 8, v1[2], true);
+      offset += 12;
+      
+      view.setFloat32(offset, v2[0], true);
+      view.setFloat32(offset + 4, v2[1], true);
+      view.setFloat32(offset + 8, v2[2], true);
+      offset += 12;
+      
+      view.setUint16(offset, 0, true); // attribute byte count
+      offset += 2;
+    }
+  } else {
+    for (let i = 0; i < vertices.length; i += 9) {
+      const v0 = [vertices[i], vertices[i + 1], vertices[i + 2]];
+      const v1 = [vertices[i + 3], vertices[i + 4], vertices[i + 5]];
+      const v2 = [vertices[i + 6], vertices[i + 7], vertices[i + 8]];
+      
+      const e1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
+      const e2 = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
+      
+      const normal = [
+        e1[1] * e2[2] - e1[2] * e2[1],
+        e1[2] * e2[0] - e1[0] * e2[2],
+        e1[0] * e2[1] - e1[1] * e2[0]
+      ];
+      
+      const len = Math.sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
+      if (len > 0) {
+        normal[0] /= len;
+        normal[1] /= len;
+        normal[2] /= len;
+      }
+      
+      view.setFloat32(offset, normal[0], true);
+      view.setFloat32(offset + 4, normal[1], true);
+      view.setFloat32(offset + 8, normal[2], true);
+      offset += 12;
+      
+      for (let j = 0; j < 3; j++) {
+        view.setFloat32(offset, v0[j], true);
+        offset += 4;
+      }
+      for (let j = 0; j < 3; j++) {
+        view.setFloat32(offset, v1[j], true);
+        offset += 4;
+      }
+      for (let j = 0; j < 3; j++) {
+        view.setFloat32(offset, v2[j], true);
+        offset += 4;
+      }
+      
+      view.setUint16(offset, 0, true);
+      offset += 2;
+    }
+  }
+  
+  return buffer;
 }

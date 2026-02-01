@@ -176,7 +176,6 @@ export function stringToGeometry(args: {
   }
   
   const merged = new THREE.BufferGeometry();
-  let offset = 0;
   const positions: number[] = [];
   const normals: number[] = [];
   
@@ -203,7 +202,6 @@ export function stringToGeometry(args: {
         );
       }
     }
-    offset += posAttr.count;
   }
   
   merged.setAttribute("position", new THREE.BufferAttribute(new Float32Array(positions), 3));

@@ -1,5 +1,13 @@
 # Text to STL
 
+[![CI](https://github.com/mitchscobell/text-to-stl/actions/workflows/build.yml/badge.svg)](https://github.com/mitchscobell/text-to-stl/actions/workflows/build.yml)
+[![React](https://img.shields.io/badge/React-18.2.0-61dafb?logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.1.6-3178c6?logo=typescript)](https://www.typescriptlang.org/)
+[![Three.js](https://img.shields.io/badge/Three.js-0.182.0-black?logo=threedotjs)](https://threejs.org/)
+[![Webpack](https://img.shields.io/badge/Webpack-5.104.1-8dd6f9?logo=webpack)](https://webpack.js.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ed?logo=docker)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 Convert text to 3D STL files for 3D printing. Uses Three.js for 3D rendering and OpenType.js for font parsing.
 
 ## Features

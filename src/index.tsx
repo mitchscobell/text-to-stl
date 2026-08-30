@@ -10,24 +10,16 @@ import isValidFilename from "valid-filename";
 /** Cache for loaded fonts to avoid redundant network requests */
 const fontCache: { [name: string]: opentype.Font } = {};
 
-/** Width of form input controls in pixels */
-const controlWidth: number = 250;
-
 /** Discovered local fonts */
 let localFonts: Array<{ name: string; path: string }> = [];
 
 /**
  * Discovers available local fonts by scanning the fonts directory.
- * Attempts to load a directory listing or discovers fonts via fetch attempts.
  */
 async function discoverLocalFonts(): Promise<void> {
-  // Common font extensions
   const fontExtensions = ['.ttf', '.otf', '.woff', '.woff2'];
-  
-  // Try to detect available fonts by attempting to load common patterns
-  // This is done via a simple fetch - if the file exists, it loads
+
   try {
-    // First, try to get a fonts index if it exists
     const response = await fetch("/fonts/index.json").catch(() => null);
     if (response && response.ok) {
       const index = await response.json();
@@ -38,8 +30,6 @@ async function discoverLocalFonts(): Promise<void> {
     // Continue to discovery
   }
 
-  // Fallback: Try to discover fonts by common file patterns
-  // This is a simple approach - just try a few font names and see what exists
   const possibleFonts: Array<{ name: string; path: string }> = [];
   const knownFontNames = [
     "Amity Jack",
@@ -55,10 +45,7 @@ async function discoverLocalFonts(): Promise<void> {
       try {
         const response = await fetch(path, { method: "HEAD" });
         if (response.ok) {
-          possibleFonts.push({
-            name: fontName,
-            path: path,
-          });
+          possibleFonts.push({ name: fontName, path: path });
           break;
         }
       } catch {
@@ -71,16 +58,6 @@ async function discoverLocalFonts(): Promise<void> {
   console.log(`✓ Discovered ${localFonts.length} local font(s)`);
 }
 
-/**
- * Loads a font from the local fonts directory.
- * 
- * @param fontPath - Path to the font file (e.g., "/fonts/MyFont.ttf")
- * @returns The loaded opentype.Font object
- * @throws If the font cannot be loaded
- * 
- * @example
- * const font = await getLocalFont("/fonts/MyCustomFont.ttf");
- */
 async function getLocalFont(fontPath: string): Promise<opentype.Font> {
   if (!fontCache[fontPath]) {
     const res = await fetch(fontPath);
@@ -94,30 +71,12 @@ async function getLocalFont(fontPath: string): Promise<opentype.Font> {
   return fontCache[fontPath];
 }
 
-/**
- * Fetches and caches a Google Font by name.
- * 
- * @param args - Font request configuration
- * @param args.fontName - Name of the Google Font (e.g., "Roboto", "Damion")
- * @param args.fontVariant - Font variant like "normal" or "italic", defaults to "normal"
- * @param args.fontWeight - Font weight like "400", "700", defaults to "400"
- * @returns The loaded opentype.Font object
- * @throws If the font is not found in Google Fonts Complete
- * 
- * @example
- * const font = await getGoogleFont({
- *   fontName: "Roboto",
- *   fontVariant: "normal",
- *   fontWeight: "700"
- * });
- */
 async function getGoogleFont(args: {
   fontName: string;
   fontVariant?: string;
   fontWeight?: string;
 }): Promise<opentype.Font> {
   if (!(args.fontName in googleFonts)) {
-    console.error(Object.keys(googleFonts));
     throw new Error("font not found");
   }
   const variants = googleFonts[args.fontName].variants;
@@ -133,48 +92,13 @@ async function getGoogleFont(args: {
     const font = TextMaker.loadFont(fontData);
     fontCache[url] = font;
   }
-  const font = fontCache[url];
-  return font;
+  return fontCache[url];
 }
 
-/**
- * Loads a font from user-uploaded binary file (TTF/OTF).
- * 
- * @param buffer - The font file as an ArrayBuffer
- * @returns The loaded opentype.Font object
- * 
- * @example
- * const font = await getBinFont(fontArrayBuffer);
- */
 async function getBinFont(buffer: ArrayBuffer): Promise<opentype.Font> {
   return TextMaker.loadFont(buffer);
 }
 
-/**
- * Generates 3D BufferGeometry from text using the specified font and parameters.
- * Handles Google Fonts, local fonts, and custom uploaded fonts.
- * 
- * @param args - Geometry generation options
- * @param args.text - The text to render
- * @param args.fontSize - Font size in pixels, defaults to 72
- * @param args.width - Extrusion depth (Z-axis), defaults to 20
- * @param args.kerning - Kerning adjustment, defaults to 0
- * @param args.fontName - Name of Google Font or local font to use
- * @param args.fontPath - Path to local font file (takes precedence)
- * @param args.fontVariant - Font variant (normal/italic)
- * @param args.fontWeight - Font weight (400, 700, etc.)
- * @param args.fontBin - ArrayBuffer of custom uploaded font file (takes precedence over all)
- * @returns A BufferGeometry ready for 3D rendering
- * @throws If font loading or geometry generation fails
- * 
- * @example
- * const geometry = await generateGeometry({
- *   text: "Hello",
- *   fontSize: 72,
- *   width: 20,
- *   fontPath: "/fonts/MyFont.ttf"
- * });
- */
 async function generateGeometry(args: {
   text: string;
   fontSize?: number;
@@ -190,8 +114,7 @@ async function generateGeometry(args: {
   const width = args.width || 20;
   const text = args.text || "Hello";
   const kerning = args.kerning || 0;
-  
-  // Determine which font to load (priority: fontBin > fontPath > fontName)
+
   let font: opentype.Font;
   if (args.fontBin) {
     font = await getBinFont(args.fontBin);
@@ -204,7 +127,7 @@ async function generateGeometry(args: {
       fontWeight: args.fontWeight,
     });
   }
-  
+
   const geometry = TextMaker.stringToGeometry({
     font: font,
     text: text,
@@ -215,9 +138,236 @@ async function generateGeometry(args: {
   return geometry;
 }
 
+// ── Styles ────────────────────────────────────────────────────────────────
+
+const CSS = `
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #0f0f0f;
+    color: #e8e8e8;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
+  .app {
+    display: flex;
+    flex-direction: row;
+    height: 100dvh;
+    width: 100%;
+  }
+
+  /* ── Sidebar ─────────────────────────────────────────────────────────── */
+  .sidebar {
+    width: 340px;
+    min-width: 340px;
+    background: #1a1a1a;
+    border-right: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .sidebar-header {
+    padding: 20px 20px 12px;
+    border-bottom: 1px solid #333;
+  }
+
+  .sidebar-header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .sidebar-header h1 .icon { margin-right: 6px; }
+
+  .sidebar-header p {
+    color: #888;
+    font-size: 0.8rem;
+    margin-top: 4px;
+  }
+
+  .controls {
+    padding: 16px 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .field input[type="text"],
+  .field input[type="number"],
+  .field select {
+    width: 100%;
+    padding: 10px 12px;
+    background: #252525;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #e8e8e8;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .field input:focus,
+  .field select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+
+  .field select {
+    cursor: pointer;
+  }
+
+  .field select option {
+    background: #252525;
+    color: #e8e8e8;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .file-upload {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #252525;
+    border: 1px dashed #444;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: #888;
+    transition: border-color 0.2s;
+  }
+
+  .file-upload:hover {
+    border-color: #3b82f6;
+  }
+
+  .file-upload input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+
+  .file-upload .upload-icon { font-size: 1.1rem; }
+
+  .download-btn {
+    width: 100%;
+    padding: 12px;
+    background: #22c55e;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: auto;
+  }
+
+  .download-btn:hover { background: #16a34a; }
+
+  /* ── Preview ─────────────────────────────────────────────────────────── */
+  .preview {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #111;
+  }
+
+  .preview canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .preview-hint {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: #555;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* ── Mobile toggle ───────────────────────────────────────────────────── */
+  .mobile-toggle {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 100;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+
+  /* ── Responsive ──────────────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .app {
+      flex-direction: column;
+    }
+
+    .sidebar {
+      width: 100%;
+      min-width: unset;
+      max-height: 50dvh;
+      border-right: none;
+      border-bottom: 1px solid #333;
+    }
+
+    .sidebar.collapsed {
+      max-height: 0;
+      overflow: hidden;
+      border-bottom: none;
+    }
+
+    .preview {
+      min-height: 50dvh;
+    }
+
+    .mobile-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .field-row {
+      grid-template-columns: 1fr;
+    }
+  }
+`;
+
+// ── ThreePreview Component ────────────────────────────────────────────────
+
 interface ThreePreviewProps {
   geometry?: THREE.BufferGeometry;
-  style?: React.CSSProperties;
 }
 
 class ThreePreview extends React.Component<ThreePreviewProps, {}> {
@@ -228,9 +378,7 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
   private renderer: THREE.WebGLRenderer;
   private geometry?: THREE.BufferGeometry;
   private mesh?: THREE.Mesh;
-  private surface: HTMLDivElement | null;
   private container: HTMLDivElement | null;
-  private size?: { width: number; height: number };
   private controls: OrbitControls;
 
   public componentWillUnmount() {
@@ -253,24 +401,24 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
     this.scene.add(lights[1]);
     this.scene.add(lights[2]);
 
-    this.camera = new THREE.PerspectiveCamera(75, 1024 / 768, 0.1, 10000);
+    this.camera = new THREE.PerspectiveCamera(75, 1, 0.1, 10000);
     this.camera.position.z = 200;
     this.scene.add(this.camera);
 
-    this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
-    });
+    this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize(1024, 768); // @TODO
-    this.renderer.setClearColor(0xffffff, 1);
-    if (this.surface) {
-      this.surface.appendChild(this.renderer.domElement);
+    this.renderer.setClearColor(0x111111, 1);
+
+    if (this.container) {
+      this.container.appendChild(this.renderer.domElement);
+      const w = this.container.offsetWidth;
+      const h = this.container.offsetHeight;
+      this.renderer.setSize(w, h);
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
     }
 
-    this.controls = new OrbitControls(
-      this.camera,
-      this.renderer.domElement
-    );
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.maxPolarAngle = Math.PI * 1;
     this.controls.minDistance = 50;
     this.controls.maxDistance = 1000;
@@ -300,8 +448,8 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
       this.mesh = new THREE.Mesh(
         this.geometry,
         new THREE.MeshPhongMaterial({
-          color: 0x156289,
-          emissive: 0x072534,
+          color: 0x3b82f6,
+          emissive: 0x0a1628,
           side: THREE.DoubleSide,
         })
       );
@@ -313,69 +461,40 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
     if (!this.active) return;
     requestAnimationFrame(() => this.renderFrame());
     if (this.container) {
+      const w = this.container.offsetWidth;
+      const h = this.container.offsetHeight;
       if (
-        this.size === undefined ||
-        this.size.width !== this.container.offsetWidth ||
-        this.size.height !== this.container.offsetHeight
+        this.renderer.domElement.width !== w * window.devicePixelRatio ||
+        this.renderer.domElement.height !== h * window.devicePixelRatio
       ) {
-        this.size = {
-          width: this.container.offsetWidth,
-          height: this.container.offsetHeight,
-        };
-        this.renderer.setSize(this.size.width, this.size.height);
-        this.camera.aspect = this.size.width / this.size.height;
+        this.renderer.setSize(w, h);
+        this.camera.aspect = w / h;
         this.camera.updateProjectionMatrix();
       }
     }
     this.frame++;
-    // Animation disabled
-    // if (this.mesh) {
-    //   this.mesh.rotation.x = 0.005 * this.frame;
-    // }
-    // this.mesh.rotation.y = 0.002 * this.frame;
     this.camera.lookAt(this.scene.position);
     this.renderer.render(this.scene, this.camera);
   }
 
-  private setSurface(surface: HTMLDivElement | null) {
-    this.surface = surface;
-    if (this.surface && this.renderer) {
-      this.surface.appendChild(this.renderer.domElement);
-    }
-  }
-
   private setContainer(container: HTMLDivElement | null) {
     this.container = container;
+    if (this.container && this.renderer) {
+      this.container.appendChild(this.renderer.domElement);
+    }
   }
 
   public render() {
     return (
-      <div
-        style={{
-          position: "relative",
-          overflow: "hidden",
-          margin: 0,
-          padding: 0,
-          ...this.props.style,
-        }}
-        ref={(ref) => this.setContainer(ref)}
-      >
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            margin: 0,
-            padding: 0,
-          }}
-          ref={(ref) => this.setSurface(ref)}
-        />
+      <div className="preview" ref={(ref) => this.setContainer(ref)}>
+        <div className="preview-hint">Click and drag to rotate · Scroll to zoom</div>
       </div>
     );
   }
 }
 
-interface MainProps {}
+// ── Main App Component ────────────────────────────────────────────────────
+
 interface MainState {
   text: string;
   fontBin?: ArrayBuffer;
@@ -388,8 +507,10 @@ interface MainState {
   kerning: string;
   geometry: THREE.BufferGeometry | undefined;
   localFonts: Array<{ name: string; path: string }>;
+  sidebarCollapsed: boolean;
 }
-class Main extends React.Component<MainProps, MainState> {
+
+class Main extends React.Component<{}, MainState> {
   public state: MainState = {
     text: "Hello!",
     fontName: "Damion",
@@ -400,15 +521,12 @@ class Main extends React.Component<MainProps, MainState> {
     kerning: "0",
     geometry: undefined,
     localFonts: [],
+    sidebarCollapsed: false,
   };
 
   public async componentDidMount() {
-    // Discover local fonts
     await discoverLocalFonts();
-    this.setState({
-      localFonts: localFonts,
-    });
-    // Generate initial geometry
+    this.setState({ localFonts: localFonts });
     this.updateGeometry();
   }
 
@@ -444,10 +562,10 @@ class Main extends React.Component<MainProps, MainState> {
   }
 
   private download() {
-    let stl = TextMaker.geometryToSTL(this.geometry);
-    let blob = new Blob([stl], { type: "application/octet-stream" });
-    let url = window.URL.createObjectURL(blob);
-    let a = document.createElement("a");
+    const stl = TextMaker.geometryToSTL(this.geometry);
+    const blob = new Blob([stl], { type: "application/octet-stream" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
     a.href = url;
     a.download = this.getFilename(this.state.text);
     document.body.appendChild(a);
@@ -462,11 +580,10 @@ class Main extends React.Component<MainProps, MainState> {
     newFilename = isValidFilename(newFilename)
       ? newFilename + ".stl"
       : defaultOutput;
-
     return newFilename;
   }
 
-  public componentDidUpdate(_prevProps: MainProps, prevState: MainState) {
+  public componentDidUpdate(_prevProps: {}, prevState: MainState) {
     if (
       prevState.text !== this.state.text ||
       prevState.fontBin !== this.state.fontBin ||
@@ -481,219 +598,170 @@ class Main extends React.Component<MainProps, MainState> {
     }
   }
 
-  private renderSettings() {
+  public render() {
+    const { fontName, localFonts: lf } = this.state;
+    const gFont = googleFonts[fontName];
+    const hasVariants = gFont && gFont.variants;
+    const hasWeights = hasVariants && gFont.variants[this.state.fontVariant];
+
     return (
-      <div>
-        <div>
-          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-            Text
-          </label>
-          <input
-            style={{ width: controlWidth, margin: 10 }}
-            type="text"
-            value={this.state.text}
-            onChange={(event) => this.setState({ text: event.target.value })}
-          />
-        </div>
+      <div className="app">
+        <style>{CSS}</style>
 
-        <div>
-          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-            Font
-          </label>
-          <select
-            style={{ width: controlWidth, margin: 10 }}
-            value={this.state.fontName}
-            onChange={(event) => {
-              const selectedValue = event.target.value;
-              // Check if it's a local font
-              const localFont = this.state.localFonts.find(
-                f => f.name === selectedValue
-              );
-              if (localFont) {
-                this.setState({
-                  fontName: selectedValue,
-                  fontPath: localFont.path,
-                  fontBin: undefined,
-                });
-              } else {
-                this.setState({
-                  fontName: selectedValue,
-                  fontPath: undefined,
-                  fontBin: undefined,
-                });
-              }
-            }}
-          >
-            {/* Local fonts section */}
-            {this.state.localFonts.length > 0 && (
-              <optgroup label="Local Fonts">
-                {this.state.localFonts.map(font => (
-                  <option key={font.path} value={font.name}>
-                    {font.name}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            
-            {/* Google Fonts section */}
-            <optgroup label="Google Fonts">
-              {Object.keys(googleFonts).map((a) =>
-                a === "default" ? null : (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                )
-              )}
-            </optgroup>
-            
-            {/* Custom uploaded font */}
-            {!!this.state.fontBin && (
-              <optgroup label="Uploaded">
-                <option value={this.state.fontName}>
-                  {this.state.fontName}
-                </option>
-              </optgroup>
-            )}
-          </select>
-        </div>
-
-        <div>
-          <label
-            style={{ display: "inline-block", width: 80, margin: 10 }}
-          ></label>
-          <input
-            style={{ width: controlWidth, margin: 10 }}
-            type="file"
-            accept=".ttf"
-            onChange={async (e) => {
-              const file = e.target.files![0];
-              const buffer = await new Promise<ArrayBuffer>(
-                (resolve, reject) => {
-                  const reader = new FileReader();
-                  reader.onload = () => {
-                    resolve(reader.result as ArrayBuffer);
-                  };
-                  reader.onerror = (e) => {
-                    reject(e);
-                  };
-                  reader.readAsArrayBuffer(file);
-                }
-              );
-              this.setState({ fontName: file.name, fontBin: buffer });
-            }}
-          />
-        </div>
-
-        {googleFonts[this.state.fontName] && (
-          <div>
-            <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-              Variant
-            </label>
-            <select
-              style={{ width: controlWidth, margin: 10 }}
-              value={this.state.fontVariant}
-              onChange={(event) =>
-                this.setState({ fontVariant: event.target.value })
-              }
-            >
-              {Object.keys(googleFonts[this.state.fontName].variants).map(
-                (i) => (
-                  <option key={i} value={i}>
-                    {i}
-                  </option>
-                )
-              )}
-            </select>
+        <div className={`sidebar ${this.state.sidebarCollapsed ? "collapsed" : ""}`}>
+          <div className="sidebar-header">
+            <h1><span className="icon">🔤</span> Text to STL</h1>
+            <p>Turn text into 3D-printable STL files</p>
           </div>
-        )}
-        {googleFonts[this.state.fontName] &&
-          googleFonts[this.state.fontName].variants[this.state.fontVariant] && (
-            <div>
-              <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-                Weight
-              </label>
+
+          <div className="controls">
+            {/* Text */}
+            <div className="field">
+              <label>Text</label>
+              <input
+                type="text"
+                value={this.state.text}
+                onChange={(e) => this.setState({ text: e.target.value })}
+                placeholder="Enter text…"
+              />
+            </div>
+
+            {/* Font */}
+            <div className="field">
+              <label>Font</label>
               <select
-                style={{ width: controlWidth, margin: 10 }}
-                value={this.state.fontWeight}
-                onChange={(event) =>
-                  this.setState({ fontWeight: event.target.value })
-                }
+                value={fontName}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const local = lf.find((f) => f.name === val);
+                  if (local) {
+                    this.setState({ fontName: val, fontPath: local.path, fontBin: undefined });
+                  } else {
+                    this.setState({ fontName: val, fontPath: undefined, fontBin: undefined });
+                  }
+                }}
               >
-                {Object.keys(
-                  googleFonts[this.state.fontName].variants[
-                    this.state.fontVariant
-                  ]
-                ).map((i) => (
-                  <option key={i} value={i}>
-                    {i}
-                  </option>
-                ))}
+                {lf.length > 0 && (
+                  <optgroup label="Local Fonts">
+                    {lf.map((f) => (
+                      <option key={f.path} value={f.name}>{f.name}</option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label="Google Fonts">
+                  {Object.keys(googleFonts).map((a) =>
+                    a === "default" ? null : (
+                      <option key={a} value={a}>{a}</option>
+                    )
+                  )}
+                </optgroup>
+                {!!this.state.fontBin && (
+                  <optgroup label="Uploaded">
+                    <option value={fontName}>{fontName}</option>
+                  </optgroup>
+                )}
               </select>
             </div>
-          )}
 
-        <div>
-          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-            Size
-          </label>
-          <input
-            style={{ width: controlWidth, margin: 10 }}
-            type="text"
-            value={this.state.fontSize}
-            onChange={(event) =>
-              this.setState({ fontSize: event.target.value })
-            }
-          />
+            {/* Upload font */}
+            <div className="field">
+              <label>Or upload a font</label>
+              <div className="file-upload">
+                <span className="upload-icon">📁</span>
+                <span>Choose .ttf file…</span>
+                <input
+                  type="file"
+                  accept=".ttf,.otf"
+                  onChange={async (e) => {
+                    const file = e.target.files![0];
+                    const buffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onload = () => resolve(reader.result as ArrayBuffer);
+                      reader.onerror = (err) => reject(err);
+                      reader.readAsArrayBuffer(file);
+                    });
+                    this.setState({ fontName: file.name, fontBin: buffer });
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Variant + Weight */}
+            {hasVariants && (
+              <div className="field-row">
+                <div className="field">
+                  <label>Variant</label>
+                  <select
+                    value={this.state.fontVariant}
+                    onChange={(e) => this.setState({ fontVariant: e.target.value })}
+                  >
+                    {Object.keys(gFont.variants).map((i) => (
+                      <option key={i} value={i}>{i}</option>
+                    ))}
+                  </select>
+                </div>
+                {hasWeights && (
+                  <div className="field">
+                    <label>Weight</label>
+                    <select
+                      value={this.state.fontWeight}
+                      onChange={(e) => this.setState({ fontWeight: e.target.value })}
+                    >
+                      {Object.keys(gFont.variants[this.state.fontVariant]).map((i) => (
+                        <option key={i} value={i}>{i}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Size + Width */}
+            <div className="field-row">
+              <div className="field">
+                <label>Font Size</label>
+                <input
+                  type="text"
+                  value={this.state.fontSize}
+                  onChange={(e) => this.setState({ fontSize: e.target.value })}
+                />
+              </div>
+              <div className="field">
+                <label>Depth (Width)</label>
+                <input
+                  type="text"
+                  value={this.state.width}
+                  onChange={(e) => this.setState({ width: e.target.value })}
+                />
+              </div>
+            </div>
+
+            {/* Kerning */}
+            <div className="field">
+              <label>Kerning</label>
+              <input
+                type="text"
+                value={this.state.kerning}
+                onChange={(e) => this.setState({ kerning: e.target.value })}
+              />
+            </div>
+
+            {/* Download */}
+            <button className="download-btn" onClick={() => this.download()}>
+              ⬇ Download .STL
+            </button>
+          </div>
         </div>
 
-        <div>
-          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-            Kerning
-          </label>
-          <input
-            style={{ width: controlWidth, margin: 10 }}
-            type="text"
-            value={this.state.kerning}
-            onChange={(event) => this.setState({ kerning: event.target.value })}
-          />
-        </div>
+        <ThreePreview geometry={this.state.geometry} />
 
-        <div>
-          <label style={{ display: "inline-block", width: 80, margin: 10 }}>
-            Width
-          </label>
-          <input
-            style={{ width: controlWidth, margin: 10 }}
-            type="text"
-            value={this.state.width}
-            onChange={(event) => this.setState({ width: event.target.value })}
-          />
-        </div>
-
-        <div>
-          <button
-            style={{ alignSelf: "center", margin: 10 }}
-            onClick={() => this.download()}
-          >
-            Download .STL
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  public render() {
-    return (
-      <div style={{ display: "flex", flex: 1, flexDirection: "row" }}>
-        <div
-          style={{ display: "flex", width: 400, backgroundColor: "powderblue" }}
+        {/* Mobile fab to toggle sidebar */}
+        <button
+          className="mobile-toggle"
+          onClick={() => this.setState({ sidebarCollapsed: !this.state.sidebarCollapsed })}
         >
-          {this.renderSettings()}
-        </div>
-        <ThreePreview
-          geometry={this.state.geometry}
-          style={{ display: "flex", flex: 1 }}
-        />
+          {this.state.sidebarCollapsed ? "⚙" : "✕"}
+        </button>
       </div>
     );
   }

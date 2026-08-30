@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 3D extruded "T" icon for Text-to-STL -->
+  <!-- Back face (depth) -->
+  <polygon points="12,10 52,10 52,22 36,22 36,52 28,52 28,22 12,22" fill="#2563eb" transform="translate(4,4)"/>
+  <!-- Front face -->
+  <polygon points="12,10 52,10 52,22 36,22 36,52 28,52 28,22 12,22" fill="#3b82f6"/>
+  <!-- Top edge (connects front top to back top) -->
+  <polygon points="12,10 16,14 56,14 52,10" fill="#60a5fa"/>
+  <!-- Right edge of crossbar -->
+  <polygon points="52,10 56,14 56,26 52,22" fill="#1d4ed8"/>
+  <!-- Right edge of stem -->
+  <polygon points="36,22 40,26 40,56 36,52" fill="#1d4ed8"/>
+  <!-- Bottom of stem -->
+  <polygon points="28,52 32,56 40,56 36,52" fill="#1e40af"/>
+</svg>

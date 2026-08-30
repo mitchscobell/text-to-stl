@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+#
+# .githooks/pre-push
+#
+# Every push to master cuts a release. This hook ensures the push includes a
+# Release-Title: trailer on one of the commits.
+#
+# Install: npm run setup-hooks  (or npm install, which does it for you)
+# Bypass:  SKIP_RELEASE_TITLE=1 git push
+#
+set -euo pipefail
+
+if [ "${SKIP_RELEASE_TITLE:-}" = "1" ]; then
+  exit 0
+fi
+
+ZERO=$(git hash-object --stdin </dev/null | tr '[:xdigit:]' '0')
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$ZERO" ] && continue
+  case "$remote_ref" in
+    refs/heads/master) ;;
+    *) continue ;;
+  esac
+
+  if [ "$remote_sha" = "$ZERO" ]; then
+    last_tag=$(git tag -l 'v*' | sed 's/^v//' | sort -V | tail -n1)
+    range=${last_tag:+v$last_tag..}$local_sha
+  else
+    range="$remote_sha..$local_sha"
+  fi
+
+  subjects=$(git log --no-merges --pretty=format:%s "$range" | grep -v '^Bump version to ' || true)
+  [ -z "$subjects" ] && continue
+
+  # Check for British spellings in release trailers
+  trailers=$(git log --no-merges --pretty=format:%b "$range" | grep -i '^Release-\(Title\|Note\):' || true)
+  british=$(printf '%s' "$trailers" | grep -oiE '\b(colour|colours|behaviour|centre|grey|greys|serialis[a-z]*|recognis[a-z]*|cancelled|labelled|licence)\b' | sort -u || true)
+  if [ -n "$british" ]; then
+    cat >&2 <<SPELLING
+
+  ✗ British spelling in a release note:
+
+$(printf '      %s\n' "$british")
+
+    Release notes are permanent once pushed. Fix it with
+    npm run release-title before pushing.
+
+SPELLING
+    exit 1
+  fi
+
+  # Check the generated release notes are up to date
+  if command -v node >/dev/null 2>&1; then
+    before=$(cat data/release-notes.json 2>/dev/null || true)
+    pending=$(node -p "require('./package.json').version" 2>/dev/null || true)
+    node scripts/generate-release-notes.mjs "$pending" >/dev/null 2>&1 || true
+    if [ "$before" != "$(cat data/release-notes.json 2>/dev/null || true)" ]; then
+      cat >&2 <<STALE
+
+  ✗ data/release-notes.json is out of date.
+
+    It has been regenerated for you. Commit it and push again:
+
+      git add data/release-notes.json && git commit --amend --no-edit
+
+STALE
+      exit 1
+    fi
+  fi
+
+  if [ -n "$trailers" ] && printf '%s' "$trailers" | grep -qi '^Release-Title:'; then
+    continue
+  fi
+
+  cat >&2 <<MESSAGE
+
+  ✗ Nothing in this push says what to call the release.
+
+    Pushing to master cuts a release, and the headline comes from a
+    Release-Title: trailer on one of these commits:
+
+$(printf '      %s\n' "$subjects")
+
+    Add one to the most recent commit:
+
+      npm run release-title "Dark theme redesign" \\
+        "Rebuilt the UI with a modern dark theme." \\
+        "Added mobile responsive layout."
+
+    To push anyway:  SKIP_RELEASE_TITLE=1 git push
+
+MESSAGE
+  exit 1
+done
+
+exit 0

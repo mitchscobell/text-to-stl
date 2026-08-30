@@ -27,7 +27,7 @@ module.exports = {
       filename: "index.html",
       inject: "body",
       title: "Text to STL",
-      favicon: "./src/images/favicon.png",
+      favicon: "./src/images/favicon.svg",
     }),
     new CopyPlugin({
       patterns: [

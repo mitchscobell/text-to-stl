@@ -1,0 +1,152 @@
+name: Build, Test, Version Bump, and Release
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Security audit
+      run: npm audit --audit-level=high
+
+    - name: Run tests
+      run: npm test
+
+    - name: Build project
+      run: npm run build
+
+    - name: Docker smoke test
+      run: bash scripts/docker-smoke-test.sh
+
+    - name: Work out the next free version
+      id: increment_version
+      run: |
+        set -euo pipefail
+        git fetch --tags --force --quiet
+
+        PKG=$(node -p "require('./package.json').version")
+
+        LATEST_TAG=$(git tag -l 'v*' | sed 's/^v//' | sort -V | tail -n1 || true)
+        BASE=$(printf '%s\n%s\n' "$PKG" "${LATEST_TAG:-0.0.0}" | sort -V | tail -n1)
+        echo "package.json=$PKG  latest tag=${LATEST_TAG:-none}  base=$BASE"
+
+        if [ "$BASE" = "$PKG" ] && [ "$PKG" != "${LATEST_TAG:-}" ] \
+           && ! git rev-parse -q --verify "refs/tags/v$PKG" >/dev/null; then
+          echo "new_version=$PKG" >> $GITHUB_OUTPUT
+          echo "Releasing the version package.json already asks for: $PKG"
+          exit 0
+        fi
+
+        IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+
+        while :; do
+          MINOR=$((MINOR + 1))
+          CANDIDATE="$MAJOR.$MINOR.0"
+          if ! git rev-parse -q --verify "refs/tags/v$CANDIDATE" >/dev/null; then
+            break
+          fi
+          echo "v$CANDIDATE already exists, trying the next one"
+        done
+
+        echo "new_version=$CANDIDATE" >> $GITHUB_OUTPUT
+        echo "New version: $CANDIDATE"
+
+    - name: Bump version and push
+      id: bump
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+
+        for attempt in 1 2 3 4 5; do
+          git fetch origin master --tags --force --quiet
+          git reset --hard origin/master --quiet
+
+          PKG=$(node -p "require('./package.json').version")
+          LATEST_TAG=$(git tag -l 'v*' | sed 's/^v//' | sort -V | tail -n1 || true)
+          BASE=$(printf '%s\n%s\n' "$PKG" "${LATEST_TAG:-0.0.0}" | sort -V | tail -n1)
+
+          if [ "$BASE" = "$PKG" ] && [ "$PKG" != "${LATEST_TAG:-}" ] \
+             && ! git rev-parse -q --verify "refs/tags/v$PKG" >/dev/null; then
+            CANDIDATE="$PKG"
+          else
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+            while :; do
+              MINOR=$((MINOR + 1))
+              CANDIDATE="$MAJOR.$MINOR.0"
+              git rev-parse -q --verify "refs/tags/v$CANDIDATE" >/dev/null || break
+            done
+          fi
+
+          npm version "$CANDIDATE" --no-git-tag-version --allow-same-version >/dev/null
+
+          node scripts/generate-release-notes.mjs "$CANDIDATE"
+
+          git add package.json package-lock.json data/release-notes.json
+
+          if git diff --cached --quiet; then
+            echo "new_version=$CANDIDATE" >> $GITHUB_OUTPUT
+            echo "package.json and the notes are already at $CANDIDATE"
+            exit 0
+          fi
+
+          git commit -q -m "Bump version to $CANDIDATE [skip ci]"
+
+          if git push origin HEAD:master --quiet; then
+            echo "new_version=$CANDIDATE" >> $GITHUB_OUTPUT
+            echo "pushed v$CANDIDATE on attempt $attempt"
+            exit 0
+          fi
+          echo "push raced on attempt $attempt, retrying"
+          sleep $((attempt * 3))
+        done
+
+        echo "could not push a version bump after 5 attempts" >&2
+        exit 1
+
+    - name: Create GitHub Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VERSION: ${{ steps.bump.outputs.new_version }}
+      run: |
+        set -euo pipefail
+        if gh release view "v$VERSION" >/dev/null 2>&1; then
+          echo "Release v$VERSION already exists — nothing to do."
+          exit 0
+        fi
+        if node scripts/release-body.mjs "$VERSION" > /tmp/release-notes.md; then
+          TITLE=$(node scripts/release-body.mjs "$VERSION" --title)
+          gh release create "v$VERSION" \
+            --title "$TITLE" \
+            --notes-file /tmp/release-notes.md
+        else
+          gh release create "v$VERSION" \
+            --title "v$VERSION" \
+            --notes "Release v$VERSION"
+        fi

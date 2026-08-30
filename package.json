@@ -7,8 +7,12 @@
     "dev": "webpack serve",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:docker": "bash scripts/docker-smoke-test.sh",
     "lint": "eslint src --ext .ts,.tsx",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix"
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "release-title": "node scripts/set-release-title.mjs",
+    "setup-hooks": "git config core.hooksPath .githooks",
+    "postinstall": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "repository": {
     "type": "git",

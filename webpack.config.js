@@ -52,7 +52,8 @@ module.exports = {
 
   output: {
     path: path.resolve("./dist"),
-    filename: "[name].js",
+    filename: "[name].[contenthash:8].js",
+    clean: true,
   },
 
   entry: {

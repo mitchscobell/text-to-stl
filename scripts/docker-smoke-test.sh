@@ -104,13 +104,22 @@ echo "  Content OK"
 
 # ─── Assert JS bundle is served ─────────────────────────────────────────────
 
-echo "--- Asserting JS bundle is served ---"
-JS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/index.js")
-if [ "$JS_CODE" != "200" ]; then
-  echo "FAIL: GET /index.js returned HTTP $JS_CODE (expected 200)"
+echo "--- Asserting hashed JS bundle is served ---"
+JS_SRC=$(printf '%s' "$HOME_BODY" | grep -oE 'src="[^"]+\.js"' | head -1 | cut -d'"' -f2)
+if [ -z "$JS_SRC" ]; then
+  echo "FAIL: index.html did not reference a .js bundle"
   exit 1
 fi
-echo "  HTTP $JS_CODE OK"
+if ! printf '%s' "$JS_SRC" | grep -qE '\.[0-9a-f]{8}\.js$'; then
+  echo "FAIL: JS bundle is not content-hashed: $JS_SRC"
+  exit 1
+fi
+JS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:$PORT/$JS_SRC")
+if [ "$JS_CODE" != "200" ]; then
+  echo "FAIL: GET /$JS_SRC returned HTTP $JS_CODE (expected 200)"
+  exit 1
+fi
+echo "  $JS_SRC HTTP $JS_CODE OK"
 
 # ─── Assert /version page ───────────────────────────────────────────────────
 

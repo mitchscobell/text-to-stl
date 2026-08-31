@@ -32,9 +32,17 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: "fonts", to: "fonts" },
+        { from: "public/version.json", to: "version.json", noErrorOnMissing: true },
       ],
     }),
   ],
+
+  devServer: {
+    port: 8080,
+    static: {
+      directory: path.join(__dirname, "public"),
+    },
+  },
 
   target: "web",
 

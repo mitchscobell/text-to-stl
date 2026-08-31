@@ -285,6 +285,64 @@ const CSS = `
 
   .download-btn:hover { background: #16a34a; }
 
+  .sidebar-footer {
+    padding: 12px 20px 16px;
+    border-top: 1px solid #333;
+    font-size: 0.75rem;
+    color: #666;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sidebar-footer a {
+    color: #888;
+    text-decoration: none;
+  }
+
+  .sidebar-footer a:hover { color: #3b82f6; }
+
+  .color-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .color-row input[type="color"] {
+    width: 44px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: #252525;
+    cursor: pointer;
+  }
+
+  .color-row .hex {
+    font-size: 0.8rem;
+    color: #888;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .swatches {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    border: 1px solid #444;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .swatch.selected {
+    outline: 2px solid #3b82f6;
+    outline-offset: 1px;
+  }
+
   /* ── Preview ─────────────────────────────────────────────────────────── */
   .preview {
     flex: 1;
@@ -368,6 +426,7 @@ const CSS = `
 
 interface ThreePreviewProps {
   geometry?: THREE.BufferGeometry;
+  color: string;
 }
 
 class ThreePreview extends React.Component<ThreePreviewProps, {}> {
@@ -435,7 +494,16 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
   public componentDidUpdate(prevProps: ThreePreviewProps) {
     if (prevProps.geometry !== this.props.geometry) {
       this.setGeometry(this.props.geometry);
+    } else if (prevProps.color !== this.props.color) {
+      this.applyColor(this.props.color);
     }
+  }
+
+  private applyColor(hex: string) {
+    if (!this.mesh) return;
+    const mat = this.mesh.material as THREE.MeshPhongMaterial;
+    mat.color.set(hex);
+    mat.emissive.copy(new THREE.Color(hex).multiplyScalar(0.12));
   }
 
   public setGeometry(geometry: THREE.BufferGeometry | undefined) {
@@ -445,11 +513,12 @@ class ThreePreview extends React.Component<ThreePreviewProps, {}> {
     }
     this.geometry = geometry;
     if (this.geometry) {
+      const color = new THREE.Color(this.props.color);
       this.mesh = new THREE.Mesh(
         this.geometry,
         new THREE.MeshPhongMaterial({
-          color: 0x3b82f6,
-          emissive: 0x0a1628,
+          color,
+          emissive: color.clone().multiplyScalar(0.12),
           side: THREE.DoubleSide,
         })
       );
@@ -508,6 +577,8 @@ interface MainState {
   geometry: THREE.BufferGeometry | undefined;
   localFonts: Array<{ name: string; path: string }>;
   sidebarCollapsed: boolean;
+  version: string;
+  modelColor: string;
 }
 
 class Main extends React.Component<{}, MainState> {
@@ -522,12 +593,25 @@ class Main extends React.Component<{}, MainState> {
     geometry: undefined,
     localFonts: [],
     sidebarCollapsed: false,
+    version: "",
+    modelColor: "#e8e8e8",
   };
 
   public async componentDidMount() {
     await discoverLocalFonts();
     this.setState({ localFonts: localFonts });
     this.updateGeometry();
+    try {
+      const res = await fetch("/version.json");
+      if (res.ok) {
+        const data = (await res.json()) as { version?: string };
+        if (data.version) {
+          this.setState({ version: data.version });
+        }
+      }
+    } catch {
+      // Footer stays hidden if version.json is unavailable.
+    }
   }
 
   private geometry: THREE.BufferGeometry;
@@ -746,14 +830,46 @@ class Main extends React.Component<{}, MainState> {
               />
             </div>
 
+            {/* Preview color */}
+            <div className="field">
+              <label>Preview color</label>
+              <div className="color-row">
+                <input
+                  type="color"
+                  value={this.state.modelColor}
+                  onChange={(e) => this.setState({ modelColor: e.target.value })}
+                  aria-label="Preview color"
+                />
+                <span className="hex">{this.state.modelColor}</span>
+              </div>
+              <div className="swatches">
+                {["#e8e8e8", "#fbbf24", "#34d399", "#fb923c", "#f472b6"].map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`swatch${this.state.modelColor === c ? " selected" : ""}`}
+                    style={{ background: c }}
+                    aria-label={`Set preview color ${c}`}
+                    onClick={() => this.setState({ modelColor: c })}
+                  />
+                ))}
+              </div>
+            </div>
+
             {/* Download */}
             <button className="download-btn" onClick={() => this.download()}>
               ⬇ Download .STL
             </button>
           </div>
+
+          {this.state.version && (
+            <footer className="sidebar-footer">
+              <a href="/version" title="Version details">v{this.state.version}</a>
+            </footer>
+          )}
         </div>
 
-        <ThreePreview geometry={this.state.geometry} />
+        <ThreePreview geometry={this.state.geometry} color={this.state.modelColor} />
 
         {/* Mobile fab to toggle sidebar */}
         <button

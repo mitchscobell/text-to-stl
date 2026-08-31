@@ -4,7 +4,7 @@
   "description": "create .stl files from font",
   "scripts": {
     "build": "node scripts/generate-version.js && webpack",
-    "dev": "webpack serve",
+    "dev": "node scripts/generate-version.js && webpack serve",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:docker": "bash scripts/docker-smoke-test.sh",

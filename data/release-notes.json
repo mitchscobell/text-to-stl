@@ -1,11 +1,19 @@
 [
   {
-    "version": "3.0.4",
+    "version": "3.0.5",
     "date": "2026-08-30",
     "title": "CI pipeline and versioning",
     "changes": [
       "Full CI with Docker smoke test, release notes, and auto-versioning.",
       "New 3D T favicon in the app's blue accent color."
+    ]
+  },
+  {
+    "version": "3.0.4",
+    "date": "2026-08-30",
+    "title": "Redesign UI with dark theme and responsive layout",
+    "changes": [
+      "Redesign UI with dark theme and responsive layout"
     ]
   },
   {

@@ -1,6 +1,6 @@
 {
   "name": "text-to-stl",
-  "version": "3.0.6",
+  "version": "3.1.0",
   "description": "create .stl files from font",
   "scripts": {
     "build": "node scripts/generate-version.js && webpack",

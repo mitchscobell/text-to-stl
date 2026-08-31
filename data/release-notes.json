@@ -1,5 +1,22 @@
 [
   {
+    "version": "3.1.0",
+    "date": "2026-08-31",
+    "title": "Housekeeping",
+    "housekeeping": true,
+    "changes": [
+      "Internal changes only — nothing you can see."
+    ]
+  },
+  {
+    "version": "3.0.6",
+    "date": "2026-08-31",
+    "title": "Preview color and version footer",
+    "changes": [
+      "Added a sidebar version footer and a configurable 3D preview color, defaulting to light gray."
+    ]
+  },
+  {
     "version": "3.0.5",
     "date": "2026-08-30",
     "title": "CI pipeline and versioning",

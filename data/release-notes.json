@@ -1,5 +1,22 @@
 [
   {
+    "version": "3.2.0",
+    "date": "2026-08-31",
+    "title": "Housekeeping",
+    "housekeeping": true,
+    "changes": [
+      "Internal changes only — nothing you can see."
+    ]
+  },
+  {
+    "version": "3.1.2",
+    "date": "2026-08-31",
+    "title": "Cache-bust hashed JavaScript bundles",
+    "changes": [
+      "Each build now emits a content-hashed JS file so Cloudflare cannot keep serving a year-old index.js."
+    ]
+  },
+  {
     "version": "3.1.1",
     "date": "2026-08-31",
     "title": "Cache-bust hashed JavaScript bundles",

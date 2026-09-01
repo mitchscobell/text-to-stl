@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.4.0",
+    "date": "2026-09-01",
+    "title": "Patch known npm CVEs",
+    "changes": [
+      "Bump postcss, ws, serialize-javascript, and webpack-dev-server to patched releases.",
+      "Pin remaining transitive packages with npm overrides so the audit board is clean."
+    ]
+  },
+  {
     "version": "3.3.0",
     "date": "2026-09-01",
     "title": "Housekeeping",

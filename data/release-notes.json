@@ -2,9 +2,10 @@
   {
     "version": "3.5.0",
     "date": "2026-09-01",
-    "title": "Keep lint working after CVE pins",
+    "title": "Split ajv pins for ESLint",
     "changes": [
-      "ESLint cannot use ajv 8. Pin its copy to 6.15.0 and leave webpack on 8.18.0."
+      "ESLint cannot use ajv 8. Pin its copy to 6.15.0 and leave webpack on 8.18.0.",
+      "Keep webpack on ajv 8.18.0 and ESLint on ajv 6.15.0 so lint does not crash."
     ]
   },
   {

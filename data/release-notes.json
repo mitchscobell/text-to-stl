@@ -1,5 +1,22 @@
 [
   {
+    "version": "3.3.0",
+    "date": "2026-09-01",
+    "title": "Housekeeping",
+    "housekeeping": true,
+    "changes": [
+      "Internal changes only — nothing you can see."
+    ]
+  },
+  {
+    "version": "3.2.1",
+    "date": "2026-09-01",
+    "title": "Add Dependabot weekly dependency updates",
+    "changes": [
+      "Add Dependabot weekly dependency updates"
+    ]
+  },
+  {
     "version": "3.2.0",
     "date": "2026-08-31",
     "title": "Housekeeping",

@@ -1,5 +1,14 @@
 [
   {
+    "version": "3.7.0",
+    "date": "2026-09-01",
+    "title": "Fix CI lint and Dependabot js-yaml",
+    "changes": [
+      "Removed the second release workflow that raced version bumps and failed ESLint on Node 20.",
+      "Lint now runs in the main pipeline. js-yaml 3.x and 4.x are pinned separately so Jest and Dependabot both work."
+    ]
+  },
+  {
     "version": "3.6.0",
     "date": "2026-09-01",
     "title": "Housekeeping",

@@ -32,7 +32,7 @@ jobs:
 
     - name: Security audit
       continue-on-error: true
-      run: npm audit --audit-level=high
+      run: npm audit --omit=dev --audit-level=high
 
     - name: Run linter
       run: npm run lint

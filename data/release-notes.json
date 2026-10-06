@@ -1,5 +1,13 @@
 [
   {
+    "version": "3.9.0",
+    "date": "2026-10-06",
+    "title": "Bump proxy-addr from 2.0.7 to 2.0.8 (#11)",
+    "changes": [
+      "Bump proxy-addr from 2.0.7 to 2.0.8 (#11)"
+    ]
+  },
+  {
     "version": "3.8.0",
     "date": "2026-10-06",
     "title": "ci: audit production deps only (omit=dev)",

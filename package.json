@@ -48,7 +48,7 @@
     "postcss": "^8.5.26",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "serialize-javascript": "^7.1.1",
+    "serialize-javascript": "^7.1.2",
     "three": "^0.182.0",
     "ts-loader": "^9.4.4",
     "valid-filename": "^4.0.0",

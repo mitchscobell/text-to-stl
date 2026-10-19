@@ -1,5 +1,13 @@
 [
   {
+    "version": "3.11.0",
+    "date": "2026-10-18",
+    "title": "Security and dependency updates",
+    "changes": [
+      "Patched the development server's shell-quote and brace-expansion dependencies."
+    ]
+  },
+  {
     "version": "3.10.0",
     "date": "2026-10-19",
     "title": "Security and dependency updates",

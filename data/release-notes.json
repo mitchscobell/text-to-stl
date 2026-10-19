@@ -1,7 +1,7 @@
 [
   {
     "version": "3.10.0",
-    "date": "2026-10-18",
+    "date": "2026-10-19",
     "title": "Security and dependency updates",
     "changes": [
       "Patched high-severity advisories in fast-uri, braces and source-map-js.",

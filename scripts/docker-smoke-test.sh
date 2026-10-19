@@ -105,7 +105,10 @@ echo "  Content OK"
 # ─── Assert JS bundle is served ─────────────────────────────────────────────
 
 echo "--- Asserting hashed JS bundle is served ---"
-JS_SRC=$(printf '%s' "$HOME_BODY" | grep -oE 'src="[^"]+\.js"' | head -1 | cut -d'"' -f2)
+# The src attribute may be double-quoted, single-quoted or unquoted: webpack's
+# HTML minifier drops the quotes when they are not needed, and all three are
+# valid HTML. Take the value either way, then assert on it as before.
+JS_SRC=$(printf '%s' "$HOME_BODY" | grep -oE "src=(\"[^\"]+\.js\"|'[^']+\.js'|[^ >\"']+\.js)" | head -1 | sed -E "s/^src=//; s/^[\"']//; s/[\"']$//")
 if [ -z "$JS_SRC" ]; then
   echo "FAIL: index.html did not reference a .js bundle"
   exit 1

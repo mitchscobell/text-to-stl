@@ -13,8 +13,7 @@ concurrency:
 
 jobs:
   build-and-test:
-    # GitHub-hosted minutes are used up, so CI runs on the Mac Studio runner.
-    runs-on: [self-hosted, macOS]
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
@@ -44,10 +43,7 @@ jobs:
     - name: Build project
       run: npm run build
 
-    # The Studio's Docker is Colima, and the CLI does not find that socket on its own.
     - name: Docker smoke test
-      env:
-        DOCKER_HOST: unix:///Users/mscobell/.colima/default/docker.sock
       run: bash scripts/docker-smoke-test.sh
 
     - name: Work out the next free version
@@ -148,11 +144,11 @@ jobs:
           echo "Release v$VERSION already exists — nothing to do."
           exit 0
         fi
-        if node scripts/release-body.mjs "$VERSION" > "$RUNNER_TEMP/release-notes.md"; then
+        if node scripts/release-body.mjs "$VERSION" > /tmp/release-notes.md; then
           TITLE=$(node scripts/release-body.mjs "$VERSION" --title)
           gh release create "v$VERSION" \
             --title "$TITLE" \
-            --notes-file "$RUNNER_TEMP/release-notes.md"
+            --notes-file /tmp/release-notes.md
         else
           gh release create "v$VERSION" \
             --title "v$VERSION" \

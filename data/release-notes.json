@@ -1,5 +1,15 @@
 [
   {
+    "version": "3.13.0",
+    "date": "2026-10-28",
+    "title": "Maintenance",
+    "housekeeping": true,
+    "changes": [
+      "Internal changes only — CI now runs on the Mac Studio.",
+      "Internal changes only — CI is back on GitHub's free runners."
+    ]
+  },
+  {
     "version": "3.12.0",
     "date": "2026-10-28",
     "title": "Brotli decoder security patch",

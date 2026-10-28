@@ -23,6 +23,7 @@ RUN npm run build
 
 # Stage 3: Runtime - Nginx serving static files
 FROM nginx:alpine
+RUN apk upgrade --no-cache
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf

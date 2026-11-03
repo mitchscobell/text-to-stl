@@ -40,8 +40,14 @@ comment() {
   gh pr comment "$PR_NUMBER" --body "$1" || echo "could not comment on #$PR_NUMBER" >&2
 }
 
+# Only comments made since the pull request's current head count. An older
+# "@dependabot rebase" was answered by the rebase that produced this head,
+# so it must not stop the next request.
 already_commented() {
-  gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" --jq '.[].body' \
+  local since
+  since=$(gh pr view "$PR_NUMBER" --json commits --jq '.commits[-1].committedDate')
+  gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+    --jq ".[] | select(.created_at >= \"${since}\") | .body" \
     | grep -F -q -- "$1"
 }
 

@@ -1,5 +1,13 @@
 [
   {
+    "version": "3.15.0",
+    "date": "2026-11-03",
+    "title": "Patched path matchers for lint and tests",
+    "changes": [
+      "Development tooling moves to patched minimatch and glob."
+    ]
+  },
+  {
     "version": "3.14.0",
     "date": "2026-11-03",
     "title": "Pull request checks and dependency security fixes",

@@ -1,5 +1,13 @@
 [
   {
+    "version": "3.14.0",
+    "date": "2026-11-03",
+    "title": "Pull request checks and dependency security fixes",
+    "changes": [
+      "Dependency security fixes for the dev server; pull requests now get checks before Dependabot updates land."
+    ]
+  },
+  {
     "version": "3.13.0",
     "date": "2026-10-28",
     "title": "Maintenance",

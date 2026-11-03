@@ -3,6 +3,10 @@ name: Build, Test, Version Bump, and Release
 on:
   push:
     branches: [ master ]
+  # A push made with the workflow token does not start this workflow.
+  # Dependabot auto-merge lands that way, then dispatches this run so the
+  # bump and release still happen.
+  workflow_dispatch:
 
 permissions:
   contents: write

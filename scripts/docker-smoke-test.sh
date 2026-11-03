@@ -12,7 +12,7 @@ set -euo pipefail
 
 IMAGE="text-to-stl:smoke-test"
 CONTAINER="text-to-stl-smoke-$$"
-PORT=8081
+PORT="${PORT:-8081}"
 MAX_WAIT=120
 
 # ─── Cleanup ─────────────────────────────────────────────────────────────────

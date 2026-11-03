@@ -1,0 +1,54 @@
+name: Dependabot auto-merge
+
+# Runs after "Pull Request" succeeds. The pull_request token Dependabot
+# receives is read-only, so the landing push has to happen from this
+# workflow_run, which carries the repository token.
+#
+# That token's push does not start push workflows. The script dispatches
+# the release workflow after the commit is on master.
+
+on:
+  workflow_run:
+    workflows: ["Pull Request"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: dependabot-auto-merge
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: [self-hosted, macOS]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+
+      - name: Land the tested Dependabot commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          GIT_AUTHOR_NAME: Mitch Scobell
+          GIT_AUTHOR_EMAIL: 6463310+mitchscobell@users.noreply.github.com
+          GIT_COMMITTER_NAME: Mitch Scobell
+          GIT_COMMITTER_EMAIL: 6463310+mitchscobell@users.noreply.github.com
+        run: bash scripts/dependabot-auto-merge.sh

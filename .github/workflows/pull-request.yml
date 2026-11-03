@@ -1,0 +1,52 @@
+name: Pull Request
+
+# Same checks the release workflow runs before it bumps the version: audit,
+# lint, tests, build, and the Docker smoke test. It does not bump the
+# version, cut a release, or read repository secrets. Dependabot auto-merge
+# waits for this workflow by name.
+
+on:
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: [self-hosted, macOS]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.x"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Security audit
+        continue-on-error: true
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build project
+        run: npm run build
+
+      - name: Docker smoke test
+        env:
+          # Off the release workflow's 8081 so a PR run never collides with
+          # another smoke test on the shared Mac Studio.
+          PORT: "8090"
+        run: bash scripts/docker-smoke-test.sh

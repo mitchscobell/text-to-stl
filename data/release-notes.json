@@ -1,5 +1,13 @@
 [
   {
+    "version": "3.16.0",
+    "date": "2026-11-03",
+    "title": "Pull request checks on GitHub-hosted runners",
+    "changes": [
+      "Internal changes only."
+    ]
+  },
+  {
     "version": "3.15.0",
     "date": "2026-11-03",
     "title": "Patched path matchers for lint and tests",

@@ -18,7 +18,9 @@ concurrency:
 
 jobs:
   build-and-test:
-    runs-on: [self-hosted, macOS]
+    # GitHub-hosted on purpose: this repo is public, so a fork pull request
+    # must never run on the self-hosted Mac Studio runner.
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -45,8 +47,4 @@ jobs:
         run: npm run build
 
       - name: Docker smoke test
-        env:
-          # Off the release workflow's 8081 so a PR run never collides with
-          # another smoke test on the shared Mac Studio.
-          PORT: "8090"
         run: bash scripts/docker-smoke-test.sh

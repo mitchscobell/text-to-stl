@@ -28,7 +28,9 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.actor.login == 'dependabot[bot]' &&
       github.event.workflow_run.head_repository.full_name == github.repository
-    runs-on: [self-hosted, macOS]
+    # GitHub-hosted on purpose: this repo is public, and its jobs never run
+    # on the self-hosted Mac Studio runner.
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
